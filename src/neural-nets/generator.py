@@ -1,6 +1,4 @@
-from _typeshed import GenericPath
 import torch 
-import torch.nn.functional as F
 import torch.nn as nn
 
 class LargeBlock(nn.Module):
@@ -16,7 +14,7 @@ class LargeBlock(nn.Module):
         )
 
         self.secondBlock = nn.Sequential(
-            nn.MaxPool2d(kernel_size=7, stride=7, padding=0,),
+            nn.MaxPool2d(kernel_size=7, stride=1, padding=0,),
             nn.Conv2d(in_channels= 64, out_channels=64, kernel_size=7, stride=1, 
                       padding=0),
             nn.BatchNorm2d(64),
@@ -53,8 +51,8 @@ class ResBlock(nn.Module):
                       padding=0),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.Conv2d(in_channels=inChannel, out_channels=128, kernel_size=3, stride=1,
-                      padding=0),
+            nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, stride=1,
+                      padding=2),
             nn.BatchNorm2d(128),
         )
 
@@ -98,15 +96,27 @@ class Generator(nn.Module):
     def forward(self, x):
 
         d1 = self.down1(x)
+        print(f"d1 shape ==> {d1.shape}")
+
         d2 = self.down2(d1)
+        print(f"d2 shape ==> {d2.shape}")
+
         d3 = self.down3(d2)
-        d4 = self.down4(d3)
-        d5 = self.self5(torch.cat([d4, d3], 1))
-        d6 = self.down6(torch.cat([d5, d4], 1))
-        return d6
+        print(f"d3 shape ==> {d3.shape}")
+
+        d4 = self.down4(torch.cat([d3, d2], 1))
+        print(f"d4 shape ==> {d4.shape}")
+
+        d5 = self.down5(torch.cat([d4, d3], 1))
+        print(f"d5 shape ==> {d5.shape}")
+
+        return d5 
 
 def test():
     x = torch.randn((1, 1, 256, 256))
     model = Generator(inChannel=1)
     predicition = model(x)
     print(predicition.shape)
+
+if __name__ == "__main__":
+    test()
