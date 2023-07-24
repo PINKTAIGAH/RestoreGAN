@@ -14,7 +14,7 @@ class LargeBlock(nn.Module):
         )
 
         self.secondBlock = nn.Sequential(
-            nn.MaxPool2d(kernel_size=7, stride=1, padding=0,),
+            nn.MaxPool2d(kernel_size=2, stride=2, padding=0,),
             nn.Conv2d(in_channels= middleChannel, out_channels=outChannel, 
                       kernel_size=7, stride=1, padding=0),
             nn.BatchNorm2d(outChannel),
@@ -79,8 +79,23 @@ class SixthBlock(nn.Module):
     def forward(self, x):
         return self.sixthBlock(x)*self.A
 
+class FullyConnected(nn.Module):
+
+    def __init__(self, inFeatures, outFeatures=256):
+        super().__init__()
+
+        self.fullyConnected = nn.Sequential(
+            nn.Flatten(start_dim=2),
+            
+            nn.Linear(in_features=inFeatures, out_features=outFeatures),
+            nn.ReLU(),
+        )
+
+    def forward(self, x):
+        return self.fullyConnected(x)
+
 class Generator(nn.Module):
-    def __init__(self, inChannel=1):
+    def __init__(self, inChannel=1, imageSize=None):
         super().__init__()
         
         ### Input channels ==> 1
@@ -94,6 +109,8 @@ class Generator(nn.Module):
         ### out channel ==> 128 + 128 from skip connection
         self.down5 = SixthBlock(inChannel=128)
         ### out channels = 2
+        self.down6 = FullyConnected(inFeatures=2916, outFeatures=256)
+        ### out shape = N x 2 x 256
     
 
     def forward(self, x):
@@ -113,7 +130,10 @@ class Generator(nn.Module):
         d5 = self.down5(d4)
         print(f"d5 shape ==> {d5.shape}")
 
-        return d5 
+        d6 = self.down6(d5)
+        print(f"d6 shape ==> {d6.shape}")
+
+        return d6 
 
 def test():
     N = 256 
