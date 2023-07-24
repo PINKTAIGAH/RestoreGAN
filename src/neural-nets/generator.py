@@ -95,8 +95,10 @@ class FullyConnected(nn.Module):
         return self.fullyConnected(x)
 
 class Generator(nn.Module):
-    def __init__(self, inChannel=1, imageSize=None):
+    def __init__(self, imageSize, inChannel=1):
         super().__init__()
+
+        inputFeatures = int(imageSize/4 - 10)
         
         ### Input channels ==> 1
         self.down1 = LargeBlock(inChannel=inChannel)
@@ -109,7 +111,8 @@ class Generator(nn.Module):
         ### out channel ==> 128 + 128 from skip connection
         self.down5 = SixthBlock(inChannel=128)
         ### out channels = 2
-        self.down6 = FullyConnected(inFeatures=2916, outFeatures=256)
+        self.down6 = FullyConnected(inFeatures=inputFeatures**2,
+                                    outFeatures=imageSize)
         ### out shape = N x 2 x 256
     
 
@@ -138,7 +141,7 @@ class Generator(nn.Module):
 def test():
     N = 256 
     x = torch.randn((1, 1, N, N))
-    model = Generator(inChannel=1)
+    model = Generator(imageSize=N)
     predicition = model(x)
     print(predicition.shape)
 
