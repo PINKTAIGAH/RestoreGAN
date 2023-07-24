@@ -48,11 +48,11 @@ class ResBlock(nn.Module):
 
         self.resBlock = nn.Sequential(
             nn.Conv2d(in_channels=inChannel, out_channels=128, kernel_size=3, stride=1,
-                      padding=0),
+                      padding=1),
             nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, stride=1,
-                      padding=2),
+                      padding=1),
             nn.BatchNorm2d(128),
         )
 
