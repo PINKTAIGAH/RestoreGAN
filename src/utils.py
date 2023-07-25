@@ -67,6 +67,6 @@ def findMax(tensor):
     return maxTensor
 
 
-def normaliseTensor(tensor):
+def rescaleTensor(tensor):
     return (tensor-findMin(tensor))/findMax(tensor)
 

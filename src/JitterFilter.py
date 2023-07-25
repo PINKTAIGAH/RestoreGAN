@@ -1,4 +1,6 @@
 import numpy as np
+from ImageGenerator import ImageGenerator
+import matplotlib.pyplot as plt
 
 class JitterFilter(object):
     
@@ -20,5 +22,17 @@ class JitterFilter(object):
 
 if __name__ == "__main__":
     Filter = JitterFilter()
-    print(Filter.rowJitter(np.arange(100).reshape(10, 10), 10, 3))
-    Filter.printJitterVector()
+    Generator = ImageGenerator(N=128)
+    
+    k5 = Generator.genericNoise(kernalSize=5)
+    k5Jittered = Filter.rowJitter(k5, 128, 5) 
+
+    k65 = Generator.genericNoise(kernalSize=65)
+    k65Jittered = Filter.rowJitter(k65, 128, 5) 
+
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+    ax1.imshow(k5, cmap="gray")
+    ax2.imshow(k5Jittered, cmap="gray")
+    ax3.imshow(k65, cmap="gray")
+    ax4.imshow(k65Jittered, cmap="gray")
+    plt.show()

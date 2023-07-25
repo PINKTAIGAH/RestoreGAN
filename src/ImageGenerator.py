@@ -2,6 +2,7 @@ import numpy as np
 import torch 
 from skimage.filters import gaussian
 from scipy.signal import convolve2d
+import matplotlib.pyplot as plt
 
 class ImageGenerator(object):
     def __init__(self, N=64):
@@ -24,4 +25,11 @@ class ImageGenerator(object):
         return array
 
 if __name__ == "__main__":
-    Generator = ImageGenerator()
+    Generator = ImageGenerator(N=256)
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+    ax1.imshow(Generator.genericNoise(kernalSize=5), cmap="gnuplot")
+    ax2.imshow(Generator.genericNoise(kernalSize=15), cmap="gnuplot")
+    ax3.imshow(Generator.genericNoise(kernalSize=35), cmap="gnuplot")
+    ax4.imshow(Generator.genericNoise(kernalSize=65), cmap="gnuplot")
+    plt.show()
+
