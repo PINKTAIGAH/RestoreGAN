@@ -81,13 +81,14 @@ class SixthBlock(nn.Module):
 
 class FullyConnected(nn.Module):
 
-    def __init__(self, inFeatures, outFeatures=256):
+    def __init__(self,inChannel, inFeatures, outFeatures=256):
         super().__init__()
 
         self.fullyConnected = nn.Sequential(
-            nn.Flatten(start_dim=2),
+            nn.Flatten(start_dim=1),
             
-            nn.Linear(in_features=inFeatures, out_features=outFeatures),
+            nn.Linear(in_features=inChannel*inFeatures,
+                      out_features=inChannel*outFeatures),
             nn.ReLU(),
         )
 
@@ -98,7 +99,9 @@ class Generator(nn.Module):
     def __init__(self, imageSize, inChannel=1, outChannel=2):
         super().__init__()
 
-        inputFeatures = int(imageSize/4 - 10)
+        self.inputFeatures = int(imageSize/4 - 10)
+        self.imageSize = imageSize
+        self.outChannel = outChannel
         
         ### Input channels ==> 1
         self.down1 = LargeBlock(inChannel=inChannel)
@@ -111,7 +114,8 @@ class Generator(nn.Module):
         ### out channel ==> 128 + 128 from skip connection
         self.down5 = SixthBlock(inChannel=128, outChannel=outChannel)
         ### out channels = 2
-        self.down6 = FullyConnected(inFeatures=inputFeatures**2,
+        self.down6 = FullyConnected(inChannel=outChannel,
+                                    inFeatures=self.inputFeatures**2,
                                     outFeatures=imageSize,)
         ### out shape = N x 2 x 256
     
@@ -136,12 +140,16 @@ class Generator(nn.Module):
         d6 = self.down6(d5)
         print(f"d6 shape ==> {d6.shape}")
 
-        return d6 
+        output = torch.reshape(
+            d6, (d6.shape[0], self.outChannel, self.imageSize)
+        )
+
+        return output
 
 def test():
     N = 256 
-    x = torch.randn((1, 1, N, N))
-    model = Generator(imageSize=N, inChannel=1, outChannel=2)
+    x = torch.randn((16, 1, N, N))
+    model = Generator(imageSize=N, inChannel=1, outChannel=3)
     predicition = model(x)
     print(predicition.shape)
 
