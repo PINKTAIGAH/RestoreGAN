@@ -7,12 +7,14 @@ import torch.nn.functional as F
 Input/Output
 """
 
-def save_some_examples(gen, val_loader, epoch, folder):
-    x, y = next(iter(val_loader))
-    x, y = x.to(config.DEVICE), y.to(config.DEVICE)
+def save_some_examples(gen, val_loader, epoch, folder, filter):
+    x, y , vector= next(iter(val_loader))
+    x, y, vector = x.to(config.DEVICE), y.to(config.DEVICE), vector.to(config.DEVICE)
     gen.eval()
     with torch.no_grad():
-        y_fake = gen(x)
+        vector_fake = gen(x)
+        y_fake = filter.rowDejitterBatch(x, vector_fake)
+
         y_fake = y_fake * 0.5 + 0.5  # remove normalization#
         save_image(y_fake, folder + f"/y_gen_{epoch}.png")
         save_image(x * 0.5 + 0.5, folder + f"/input_{epoch}.png")
