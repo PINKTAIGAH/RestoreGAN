@@ -62,7 +62,6 @@ def train_fn(
                 loss_jitter*config.LAMBDA_JITTER
             )
 
-
         opt_gen.zero_grad()
         g_scaler.scale(loss_gen).backward()
         g_scaler.step(opt_gen)
@@ -74,6 +73,9 @@ def train_fn(
                 D_fake=torch.sigmoid(loss_gen).mean().item(),
             )
 
+        schedular_disc.step()
+        schedular_gen.step()
+
 #        with torch.no_grad():
 #            fakeSample = generator(x) 
 #            imageGridReal = torchvision.utils.make_grid(y[:32], normalize=True)
@@ -83,6 +85,8 @@ def train_fn(
 #            config.WRITER_FAKE.add_image("fake", imageGridFake, global_step=step)
 #
 #            step +=1
+    
+    return schedular_disc, schedular_gen, 
 
 def main():
     disc = Discriminator(config.CHANNELS_IMG, featuresD=16).to(config.DEVICE)
@@ -129,7 +133,7 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
 
     for epoch in range(config.NUM_EPOCHS):
-        train_fn(
+        schedular_disc, schedular_gen = train_fn(
             disc, gen, train_loader, opt_disc, opt_gen, LOSS_CONTENT, LOSS_JITTER,
             g_scaler, d_scaler, filter, schedular_disc, schedular_gen, 
         )
@@ -140,6 +144,7 @@ def main():
 
         save_some_examples(gen, val_loader, epoch, folder="evaluation")
                 
+
 
 if __name__ == "__main__":
     main()
