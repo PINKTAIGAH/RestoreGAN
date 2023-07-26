@@ -16,7 +16,7 @@ torch.backends.cudnn.benchmark = True
 
 def train_fn(
     disc, gen, loader, opt_disc, opt_gen, content_loss, jitter_loss, g_scaler,
-    d_scaler, filter,
+    d_scaler, filter, schedular_disc, schedular_gen, 
 ):
     loop = tqdm(loader, leave=True)
     step = 0
@@ -101,6 +101,12 @@ def main():
     LOSS_JITTER = nn.MSELoss()
     filter = JitterFilter()
 
+    schedular_disc = optim.lr_scheduler.StepLR(opt_disc,
+                                               step_size=config.SCHEDULAR_STEP,
+                                               gamma=0.1)
+    schedular_gen = optim.lr_scheduler.StepLR(opt_gen,
+                                               step_size=config.SCHEDULAR_STEP,
+                                               gamma=0.1)
 
     if config.LOAD_MODEL:
         load_checkpoint(
@@ -125,7 +131,7 @@ def main():
     for epoch in range(config.NUM_EPOCHS):
         train_fn(
             disc, gen, train_loader, opt_disc, opt_gen, LOSS_CONTENT, LOSS_JITTER,
-            g_scaler, d_scaler, filter,
+            g_scaler, d_scaler, filter, schedular_disc, schedular_gen, 
         )
 
         if config.SAVE_MODEL and epoch % 5 == 0:

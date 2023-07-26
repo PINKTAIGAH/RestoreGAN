@@ -8,6 +8,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 TRAIN_DIR = "data/train"
 VAL_DIR = "data/val"
 LEARNING_RATE = 1e-4
+SCHEDULAR_STEP = 10
 BATCH_SIZE = 16
 NUM_WORKERS = 2
 IMAGE_SIZE = 128
