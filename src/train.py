@@ -70,8 +70,8 @@ def train_fn(
 
         if idx % 10 == 0:
             loop.set_postfix(
-                D_real=torch.sigmoid(loss_disc).mean().item(),
-                D_fake=torch.sigmoid(loss_gen).mean().item(),
+                D_real=loss_disc.mean().item(),
+                D_fake=loss_gen.mean().item(),
             )
 
         schedular_disc.step()
