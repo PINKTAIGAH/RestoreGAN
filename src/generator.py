@@ -123,22 +123,22 @@ class Generator(nn.Module):
     def forward(self, x):
 
         d1 = self.down1(x)
-        print(f"d1 shape ==> {d1.shape}")
+        # print(f"d1 shape ==> {d1.shape}")
 
         d2 = self.down2(d1)
-        print(f"d2 shape ==> {d2.shape}")
+        # print(f"d2 shape ==> {d2.shape}")
 
         d3 = self.down3(d2)
-        print(f"d3 shape ==> {d3.shape}")
+        # print(f"d3 shape ==> {d3.shape}")
 
         d4 = self.down4(d3)
-        print(f"d4 shape ==> {d4.shape}")
+        # print(f"d4 shape ==> {d4.shape}")
 
         d5 = self.down5(d4)
-        print(f"d5 shape ==> {d5.shape}")
+        # print(f"d5 shape ==> {d5.shape}")
 
         d6 = self.down6(d5)
-        print(f"d6 shape ==> {d6.shape}")
+        # print(f"d6 shape ==> {d6.shape}")
 
         output = torch.reshape(
             d6, (d6.shape[0], self.outChannel, self.imageSize)
@@ -146,10 +146,17 @@ class Generator(nn.Module):
 
         return output
 
+def initialiseWeights(model):
+    ### Setting init weights when doing one of the following operations
+    for m in model.modules():
+        if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d, nn.BatchNorm2d)):
+            nn.init.normal_(m.weight.data, 0.0, 0.02)
+
 def test():
-    N = 256 
+    N = 128 
     x = torch.randn((16, 1, N, N))
-    model = Generator(imageSize=N, inChannel=1, outChannel=3)
+    model = Generator(imageSize=N, inChannel=1, outChannel=1)
+    initialiseWeights(model)
     predicition = model(x)
     print(predicition.shape)
 
