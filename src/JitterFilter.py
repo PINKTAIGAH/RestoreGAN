@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from ImageGenerator import ImageGenerator
 import matplotlib.pyplot as plt
 
@@ -19,6 +20,17 @@ class JitterFilter(object):
 
     def printJitterVector(self):
         print(self.jitterVector)
+
+    def rowDejitterBatch(self, batch, vector):
+        batchCopy = torch.clone(batch)
+        batchSize = batchCopy.shape                        # N * C * M * M
+
+        for i in range(batchSize[0]):                  # N
+            for j in range(batchSize[1]):              # C
+                for k in range(batchSize[-1]):         # M
+                    batchCopy[i][j][k] = torch.roll(batchCopy[i][j][k], 
+                                                    vector[i][k].item()) 
+        return batchCopy
 
 if __name__ == "__main__":
     Filter = JitterFilter()
