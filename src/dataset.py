@@ -33,7 +33,7 @@ class JitteredDataset(Dataset):
 
         groundTruthTorch = torch.tensor(groundTruthNumpy, dtype=torch.float32) 
         jitteredTruthTorch = torch.tensor(jitteredTruthNumpy, dtype=torch.float32) 
-        jitterVector = torch.tensor(-self.Filter.jitterVector)
+        jitterVector = torch.unsqueeze(torch.tensor(-self.Filter.jitterVector), 0)
 
         groundTruthTorch = torch.unsqueeze(groundTruthTorch, 0)
         jitteredTruthTorch = torch.unsqueeze(jitteredTruthTorch, 0)
