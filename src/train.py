@@ -24,11 +24,11 @@ def train_fn(
     for idx, (img_jittered, img_truth, vector_truth) in enumerate(loop):
         img_jittered = img_jittered.to(config.DEVICE)
         img_truth = img_truth.to(config.DEVICE)
+        vector_truth = vector_truth.to(torch.float32).to(config.DEVICE)
 
         # Train Discriminator
         with torch.cuda.amp.autocast():
             vector_fake = gen(img_jittered)        # generated unjittered image
-            print(vector_fake.shape, vector_truth.shape)
             img_fake = filter.rowDejitterBatch(img_jittered, vector_fake)
             img_fake.requires_grad_()
 
