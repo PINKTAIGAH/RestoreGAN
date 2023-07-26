@@ -1,8 +1,9 @@
 import torch
-from utils import save_checkpoint, load_checkpoint, save_some_examples
+from utils import save_checkpoint, load_checkpoint, save_some_examples, gradientPenalty
 import torch.nn as nn
 import torch.optim as optim
 import config
+from JitterFilter import JitterFilter
 from dataset import JitteredDataset  
 from generator import Generator
 from discriminator import Discriminator
@@ -14,45 +15,63 @@ torch.backends.cudnn.benchmark = True
 
 
 def train_fn(
-    disc, gen, loader, opt_disc, opt_gen, l1_loss, bce, g_scaler, d_scaler,
+    disc, gen, loader, opt_disc, opt_gen, content_loss, jitter_loss, g_scaler,
+    d_scaler, filter,
 ):
     loop = tqdm(loader, leave=True)
     step = 0
 
-    for idx, (x, y) in enumerate(loop):
-        x = x.to(config.DEVICE)
-        y = y.to(config.DEVICE)
+    for idx, (img_jittered, img_truth, vector_truth) in enumerate(loop):
+        img_jittered = img_jittered.to(config.DEVICE)
+        img_truth = img_truth.to(config.DEVICE)
 
         # Train Discriminator
         with torch.cuda.amp.autocast():
-            y_fake = gen(x)
-            D_real = disc(x, y)
-            D_real_loss = bce(D_real, torch.ones_like(D_real))
-            D_fake = disc(x, y_fake.detach())
-            D_fake_loss = bce(D_fake, torch.zeros_like(D_fake))
-            D_loss = (D_real_loss + D_fake_loss) / 2
+            vector_fake = gen(img_jittered)        # generated unjittered image
+            img_fake = filter.rowDejitter().rowDejitterBatch(img_jittered, vector_fake)
+
+            
+            disc_truth = disc(img_truth).reshape(-1)
+            disc_fake = disc(img_fake).reshape(-1)
+            gp = gradientPenalty(disc, img_truth, img_fake, device = config.DEVICE)
+
+            loss_adverserial_disc = (
+                -(torch.mean(disc_truth) - torch.mean(disc_fake)) + 
+                    config.LAMBDA_GP*gp
+            )
+
+            loss_content = content_loss(img_truth, img_fake)
+            loss_jitter = jitter_loss(vector_truth, vector_fake)
+
+            loss_disc = (
+                loss_adverserial_disc + loss_content*config.LAMBDA_CONTENT + 
+                loss_jitter*config.LAMBDA_JITTER
+            )
 
         disc.zero_grad()
-        d_scaler.scale(D_loss).backward()
+        d_scaler.scale(loss_disc).backward(retain_graph=True)
         d_scaler.step(opt_disc)
         d_scaler.update()
 
         # Train generator
         with torch.cuda.amp.autocast():
-            D_fake = disc(x, y_fake)
-            G_fake_loss = bce(D_fake, torch.ones_like(D_fake))
-            L1 = l1_loss(y_fake, y) * config.L1_LAMBDA
-            G_loss = G_fake_loss + L1
+            output = disc(img_fake).reshape(-1)
+            loss_adverserial_gen = -torch.mean(output)
+            loss_gen = (
+                loss_adverserial_gen + loss_content*config.LAMBDA_CONTENT + 
+                loss_jitter*config.LAMBDA_JITTER
+            )
+
 
         opt_gen.zero_grad()
-        g_scaler.scale(G_loss).backward()
+        g_scaler.scale(loss_gen).backward()
         g_scaler.step(opt_gen)
         g_scaler.update()
 
         if idx % 10 == 0:
             loop.set_postfix(
-                D_real=torch.sigmoid(D_real).mean().item(),
-                D_fake=torch.sigmoid(D_fake).mean().item(),
+                D_real=torch.sigmoid(loss_disc).mean().item(),
+                D_fake=torch.sigmoid(loss_gen).mean().item(),
             )
 
 #        with torch.no_grad():
@@ -75,6 +94,7 @@ def main():
     opt_gen = optim.Adam(gen.parameters(), lr=config.LEARNING_RATE, betas=(0.5, 0.999))
     LOSS_CONTENT = nn.L1Loss()
     LOSS_JITTER = nn.MSELoss()
+    filter = JitterFilter().rowDejitterBatch()
 
 
     if config.LOAD_MODEL:
@@ -100,7 +120,7 @@ def main():
     for epoch in range(config.NUM_EPOCHS):
         train_fn(
             disc, gen, train_loader, opt_disc, opt_gen, LOSS_CONTENT, LOSS_JITTER,
-            g_scaler, d_scaler,
+            g_scaler, d_scaler, filter,
         )
 
         if config.SAVE_MODEL and epoch % 5 == 0:
