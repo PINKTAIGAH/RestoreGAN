@@ -21,6 +21,17 @@ class JitterFilter(object):
     def printJitterVector(self):
         print(self.jitterVector)
 
+    def rowDejitter(self, image, vector):
+        imageCopy = torch.clone(image)
+        imageSize = imageCopy.shape                        # N * C * M * M
+
+        for i in range(imageSize[0]):                  # N
+            for j in range(imageSize[1]):              # C
+                for k in range(imageSize[-1]):         # M
+                    imageCopy[i][j][k] = torch.roll(imageCopy[i][j][k], 
+                                                    vector[i][k].item()) 
+        return imageCopy
+
     def rowDejitterBatch(self, batch, vector):
         batchCopy = torch.clone(batch)
         batchSize = batchCopy.shape                        # N * C * M * M
@@ -29,7 +40,7 @@ class JitterFilter(object):
             for j in range(batchSize[1]):              # C
                 for k in range(batchSize[-1]):         # M
                     batchCopy[i][j][k] = torch.roll(batchCopy[i][j][k], 
-                                                    vector[i][k].item()) 
+                                                    int(vector[i][0][k].item())) 
         return batchCopy
 
 if __name__ == "__main__":

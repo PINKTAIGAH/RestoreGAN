@@ -19,7 +19,7 @@ def train_fn(
     d_scaler, filter, schedular_disc, schedular_gen, 
 ):
     loop = tqdm(loader, leave=True)
-    step = 0
+    # step = 0
 
     for idx, (img_jittered, img_truth, vector_truth) in enumerate(loop):
         img_jittered = img_jittered.to(config.DEVICE)
@@ -28,9 +28,9 @@ def train_fn(
         # Train Discriminator
         with torch.cuda.amp.autocast():
             vector_fake = gen(img_jittered)        # generated unjittered image
-            img_fake = filter.rowDejitter().rowDejitterBatch(img_jittered, vector_fake)
+            img_fake = filter.rowDejitterBatch(img_jittered, vector_fake)
+            img_fake.requires_grad_()
 
-            
             disc_truth = disc(img_truth).reshape(-1)
             disc_fake = disc(img_fake).reshape(-1)
             gp = gradientPenalty(disc, img_truth, img_fake, device = config.DEVICE)
@@ -76,21 +76,22 @@ def train_fn(
         schedular_disc.step()
         schedular_gen.step()
 
-#        with torch.no_grad():
-#            fakeSample = generator(x) 
-#            imageGridReal = torchvision.utils.make_grid(y[:32], normalize=True)
-#            imageGridFake = torchvision.utils.make_grid(fakeSample[:32], normalize=True)
-#
-#            config.WRITER_REAL.add_image("real", imageGridReal, global_step=step)
-#            config.WRITER_FAKE.add_image("fake", imageGridFake, global_step=step)
-#
-#            step +=1
+       # with torch.no_grad():
+           # fakeSample = generator(x) 
+           # imageGridReal = torchvision.utils.make_grid(y[:32], normalize=True)
+           # imageGridFake = torchvision.utils.make_grid(fakeSample[:32], normalize=True)
+
+           # config.WRITER_REAL.add_image("real", imageGridReal, global_step=step)
+           # config.WRITER_FAKE.add_image("fake", imageGridFake, global_step=step)
+
+           # step +=1
     
     return schedular_disc, schedular_gen, 
 
 def main():
     disc = Discriminator(config.CHANNELS_IMG, featuresD=16).to(config.DEVICE)
     gen = Generator(inChannel=config.CHANNELS_IMG,
+                    scalingFactor=config.SCHEDULAR_STEP,
                     outChannel=config.CHANNELS_OUT,
                     imageSize=config.IMAGE_SIZE).to(config.DEVICE)
     initialiseWeights(disc)

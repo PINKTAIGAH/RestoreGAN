@@ -96,7 +96,7 @@ class FullyConnected(nn.Module):
         return self.fullyConnected(x)
 
 class Generator(nn.Module):
-    def __init__(self, imageSize, inChannel=1, outChannel=2):
+    def __init__(self, imageSize, scalingFactor, inChannel=1, outChannel=2,):
         super().__init__()
 
         self.inputFeatures = int(imageSize/4 - 10)
@@ -112,7 +112,8 @@ class Generator(nn.Module):
         ### out channel ==> 128 + 128 from  skip connection
         self.down4 = ResBlock(inChannel=128)
         ### out channel ==> 128 + 128 from skip connection
-        self.down5 = SixthBlock(inChannel=128, outChannel=outChannel)
+        self.down5 = SixthBlock(inChannel=128, outChannel=outChannel,
+                                A=scalingFactor,)
         ### out channels = 2
         self.down6 = FullyConnected(inChannel=outChannel,
                                     inFeatures=self.inputFeatures**2,
