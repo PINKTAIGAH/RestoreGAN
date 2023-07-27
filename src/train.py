@@ -111,10 +111,10 @@ def main():
 
     schedular_disc = optim.lr_scheduler.StepLR(opt_disc,
                                                step_size=config.SCHEDULAR_STEP,
-                                               gamma=0.1)
+                                               gamma=0.1, verbose=True,)
     schedular_gen = optim.lr_scheduler.StepLR(opt_gen,
                                                step_size=config.SCHEDULAR_STEP,
-                                               gamma=0.1)
+                                               gamma=0.1, verbose=True,)
 
     if config.LOAD_MODEL:
         load_checkpoint(
