@@ -76,9 +76,6 @@ def train_fn(
                 D_fake=loss_gen.mean().item(),
             )
 
-        schedular_disc.step()
-        schedular_gen.step()
-
        # with torch.no_grad():
            # fakeSample = generator(x) 
            # imageGridReal = torchvision.utils.make_grid(y[:32], normalize=True)
@@ -89,6 +86,9 @@ def train_fn(
 
            # step +=1
     
+    schedular_disc.step()
+    schedular_gen.step()
+
     return schedular_disc, schedular_gen, 
 
 def main():
