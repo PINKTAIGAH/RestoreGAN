@@ -29,8 +29,10 @@ def train_fn(
         # Train Discriminator
         with torch.cuda.amp.autocast():
             vector_fake = gen(img_jittered)        # generated unjittered image
+            print(vector_fake)
             img_fake = filter.rowDejitterBatch(img_jittered, vector_fake)
             img_fake.requires_grad_()
+            print(img_fake)
 
             disc_truth = disc(img_truth).reshape(-1)
             disc_fake = disc(img_fake).reshape(-1)
