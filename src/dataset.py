@@ -46,9 +46,12 @@ if __name__ == "__main__":
     N = 256 
     dataset = JitteredDataset(N, 20, 2)
     loader = DataLoader(dataset, batch_size=5)
+    filter = ImageGenerator(config.PSF, config.MAX_JITTER, config.IMAGE_SIZE,)
 
     for x, y, shifts in loader:
         print(x.shape, y.shape, shifts.shape)
+        z = filter.newShiftImageHorizontal(x, -shifts, isBatch=True)
 
-        # save_image(x, "images/Jittered.png")
-        # save_image(y, "images/Unjittered.png")
+        save_image(x, "images/Jittered.png")
+        save_image(y, "images/Unjittered.png")
+        save_image(z, "images/Dejittered.png")
