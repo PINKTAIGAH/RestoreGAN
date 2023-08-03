@@ -76,9 +76,6 @@ def train_fn(
                 D_fake=loss_gen.mean().item(),
             )
 
-        schedular_disc.step()
-        schedular_gen.step()
-
        # with torch.no_grad():
            # fakeSample = generator(x) 
            # imageGridReal = torchvision.utils.make_grid(y[:32], normalize=True)
@@ -89,6 +86,9 @@ def train_fn(
 
            # step +=1
     
+    schedular_disc.step()
+    schedular_gen.step()
+
     return schedular_disc, schedular_gen, 
 
 def main():
@@ -111,10 +111,10 @@ def main():
 
     schedular_disc = optim.lr_scheduler.StepLR(opt_disc,
                                                step_size=config.SCHEDULAR_STEP,
-                                               gamma=0.1)
+                                               gamma=0.1, verbose=True,)
     schedular_gen = optim.lr_scheduler.StepLR(opt_gen,
                                                step_size=config.SCHEDULAR_STEP,
-                                               gamma=0.1)
+                                               gamma=0.1, verbose=True,)
 
     if config.LOAD_MODEL:
         load_checkpoint(
