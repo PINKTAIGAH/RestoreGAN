@@ -1,3 +1,4 @@
+import config
 import torch 
 import torch.nn as nn
 
@@ -142,7 +143,7 @@ class Generator(nn.Module):
         # print(f"d6 shape ==> {d6.shape}")
 
         output = torch.reshape(
-            d6, (d6.shape[0], self.outChannel, self.imageSize)
+            d6, (d6.shape[0], self.imageSize, self.outChannel)
         )
 
         return output
@@ -156,10 +157,13 @@ def initialiseWeights(model):
 def test():
     N = 128 
     x = torch.randn((16, 1, N, N))
-    model = Generator(imageSize=N, inChannel=1, outChannel=1)
+    ideal = torch.rand((16, N, 1))
+    model = Generator(imageSize=N, scalingFactor=config.MAX_JITTER, inChannel=1,
+                      outChannel=1)
     initialiseWeights(model)
     predicition = model(x)
     print(predicition.shape)
+    print(ideal.shape)
 
 if __name__ == "__main__":
     test()
