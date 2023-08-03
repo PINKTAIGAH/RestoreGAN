@@ -86,10 +86,8 @@ def train_fn(
 
            # step +=1
     
-    schedular_disc.step()
-    schedular_gen.step()
-
-    return schedular_disc, schedular_gen, 
+    d_scaler.step(schedular_disc)
+    g_scaler.step(schedular_gen)
 
 def main():
     disc = Discriminator(config.CHANNELS_IMG, featuresD=16).to(config.DEVICE)
@@ -137,7 +135,7 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
 
     for epoch in range(config.NUM_EPOCHS):
-        schedular_disc, schedular_gen = train_fn(
+        train_fn(
             disc, gen, train_loader, opt_disc, opt_gen, LOSS_CONTENT, LOSS_JITTER,
             g_scaler, d_scaler, filter, schedular_disc, schedular_gen, 
         )
