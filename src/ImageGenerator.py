@@ -22,9 +22,15 @@ class ImageGenerator(object):
         groundTruth = torch.fft.ifft2(self.ftPsf * torch.fft.fft2(whiteNoise))  
         return torch.real(groundTruth).type(torch.float32), whiteNoise.type(torch.float32)
 
-    def generateShifts(self):
-        return torch.randn(self.imageHight-1, dtype=torch.float32)*self.maxJitter
+    def generateShiftsHorizontal(self):
+        shiftX = torch.randn((config.IMAGE_SIZE, 1))
+        shiftY = torch.zeros_like(shiftX)
+        return torch.cat([shiftX, shiftY], 1) * config.MAX_JITTER
 
+    def generateShiftsVertical(self):
+        shiftY = torch.randn((config.IMAGE_SIZE, 1))
+        shiftX = torch.zeros_like(shiftY)
+        return torch.cat([shiftX, shiftY], 1) * config.MAX_JITTER
     
     def shiftImage(self, image, shifts):
         if len(image.shape) < 2:
@@ -77,7 +83,7 @@ class ImageGenerator(object):
                                    cval=0.0, mode="wrap", prefilter=True)
         return torch.from_numpy(shiftedImage).type(torch.float32)
 
-    def newShiftImageHorizontal(self, input, shifts, isBatch=True):
+    def newShiftImageHorizontal(self, input, shifts, isBatch=False):
         if not isBatch:
             input = torch.unsqueeze(input, 0)
             shifts = torch.unsqueeze(shifts, 0)
@@ -96,10 +102,13 @@ class ImageGenerator(object):
                 output[i, :, j, :] = translate(singleImage[:, :, j, :],
                                                torch.unsqueeze(singleShift[j], 0),
                                                padding_mode="reflection",
-                                               align_corners=True)
+                                               align_corners=False)
         return output
     
-    def newShiftImageVertical(self, input, shifts):
+    def newShiftImageVertical(self, input, shifts, isBatch=True):
+        if not isBatch:
+            input = torch.unsqueeze(input, 0)
+            shifts = torch.unsqueeze(shifts, 0)
         if len(input.shape) != 4:
             raise Exception("Input image must be of dimention 4: (B, C, H, W)")
         if len(shifts.shape) !=3:
@@ -122,7 +131,7 @@ def test():
     filter = ImageGenerator(config.PSF, config.MAX_JITTER, config.IMAGE_SIZE,)
 
     groundTruth, whiteNoise = filter.generateGroundTruth()
-    shifts = filter.generateShifts()
+    shifts = generateShifts()
     shiftsVertical = filter.generateShifts()
     shiftedImage = filter.shiftImage(groundTruth, shifts)
     shiftedImageVertical = filter.verticalShiftImage(shiftedImage,

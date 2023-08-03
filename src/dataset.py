@@ -17,26 +17,29 @@ class JitteredDataset(Dataset):
 
     def __getitem__(self, idx):
 
-        groundTruth, whiteNoise = self.filter.generateGroundTruth()
-        shifts = self.filter.generateShifts()
-        shiftsVertical = self.filter.generateShifts()
-        shiftedImage = self.filter.shiftImage(groundTruth, shifts)
-        shiftedImageVertical = self.filter.verticalShiftImage(shiftedImage,
-                                                      shiftsVertical)
-
+        groundTruth, _ = self.filter.generateGroundTruth()
         groundTruth = torch.unsqueeze(groundTruth, 0)
-        shiftedImage = torch.unsqueeze(shiftedImage, 0)
-        shiftedImageVertical = torch.unsqueeze(shiftedImageVertical, 0)
+
+        shifts = self.filter.generateShiftsHorizontal()
+        # shiftsVertical = self.filter.generateShiftsVertical()
+        
+        shiftedImage = self.filter.newShiftImageHorizontal(groundTruth, shifts, 
+                                                           isBatch=False,)
+        # shiftedImageVertical = self.filter.newShiftImageVertical(groundTruth,
+                                                      # shiftsVertical, isBatch=False)
+
+        shiftedImage = torch.squeeze(shiftedImage, 0)
+        # shiftedImageVertical = torch.squeeze(shiftedImageVertical, 0)
 
         shiftedImage = utils.normaliseTensor(shiftedImage)
-        shiftedImageVertical = utils.normaliseTensor(shiftedImageVertical)
+        # shiftedImageVertical = utils.normaliseTensor(shiftedImageVertical)
         groundTruth = utils.normaliseTensor(groundTruth)
 
         shiftedImage = config.transforms(shiftedImage)
         groundTruth = config.transforms(groundTruth)
-        shiftedImageVertical = config.transforms(shiftedImageVertical)
+        # shiftedImageVertical = config.transforms(shiftedImageVertical)
 
-        return shiftedImageVertical, groundTruth
+        return shiftedImage, groundTruth, shifts
 
 if __name__ == "__main__":
 
@@ -44,7 +47,8 @@ if __name__ == "__main__":
     dataset = JitteredDataset(N, 20, 2)
     loader = DataLoader(dataset, batch_size=5)
 
-    for x, y in loader:
+    for x, y, shifts in loader:
+        print(x.shape, y.shape, shifts.shape)
 
-        save_image(x, "images/Jittered.png")
-        save_image(y, "images/Unjittered.png")
+        # save_image(x, "images/Jittered.png")
+        # save_image(y, "images/Unjittered.png")
