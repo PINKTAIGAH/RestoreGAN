@@ -88,6 +88,7 @@ def train_fn(
     
     d_scaler.step(schedular_disc)
     g_scaler.step(schedular_gen)
+    return loss_disc, loss_gen 
 
 def main():
     disc = Discriminator(config.CHANNELS_IMG, featuresD=16).to(config.DEVICE)
@@ -144,7 +145,7 @@ def main():
                                                          verbose=True)
 
     for epoch in range(config.NUM_EPOCHS):
-        train_fn(
+        D_loss, G_loss = train_fn(
             disc, gen, train_loader, opt_disc, opt_gen, LOSS_CONTENT, LOSS_JITTER,
             g_scaler, d_scaler, filter, schedular_disc, schedular_gen, 
         )
@@ -154,6 +155,11 @@ def main():
             save_checkpoint(disc, opt_disc, filename=config.CHECKPOINT_DISC)
 
         save_some_examples(gen, val_loader, epoch, folder="evaluation", filter=filter)
+
+        with open("raw_data/disc_loss.txt", "w") as f:
+            f.write(f"{D_loss.mean().item():.4f}")
+        with open("raw_data/gen_loss.txt", "w") as f:
+            f.write(f"{G_loss.mean().item():.4f}")
 
 if __name__ == "__main__":
     main()
