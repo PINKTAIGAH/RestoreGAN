@@ -1,12 +1,20 @@
+import numpy as np 
 import torch
-import albumentations as A
-from albumentations.pytorch import ToTensorV2
+from skimage.filters import gaussian
 from torch.utils.tensorboard.writer import SummaryWriter
-from torchvision.transforms import transforms
+from torchvision.transforms import transforms as transform
+
+def normalise(x):
+    if np.sum(x) == 0:
+        raise Exception("Divided by zero. Attempted to normalise a zero tensor")
+
+    return x/np.sum(x**2)
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-TRAIN_DIR = "data/train"
-VAL_DIR = "data/val"
+#TRAIN_DIR = "/home/giorgio/Desktop/cell_dataset/train/"
+TRAIN_DIR = "/home/brunicam/myscratch/p3_scratch/cell_dataset/train/"
+#VAL_DIR = "/home/giorgio/Desktop/cell_dataset/val/"
+VAL_DIR = "/home/brunicam/myscratch/p3_scratch/cell_dataset/val/"
 LEARNING_RATE = 1e-4
 SCHEDULAR_STEP = 10
 BATCH_SIZE = 16
@@ -15,6 +23,7 @@ IMAGE_SIZE = 128
 IMAGE_JITTER = 5 
 CHANNELS_IMG = 1 
 CHANNELS_OUT = 1
+SIGMA = 10 
 LAMBDA_CONTENT = 1.0
 LAMBDA_JITTER = 1.0
 LAMBDA_GP = 10
@@ -26,37 +35,19 @@ CHECKPOINT_DISC = "../models/disc.pth.tar"
 CHECKPOINT_GEN = "../models/gen.pth.tar"
 WRITER_REAL = SummaryWriter("../runs/real")
 WRITER_FAKE = SummaryWriter("../runs/fake")
-SOBEL_KERNAL = torch.tensor(
-    [
-        [-1, 0, 1],
-        [-2, 0, 2],
-        [-1, 0, 1]
-    ], dtype=torch.float32
-)
 
-both_transform = A.Compose(
-    [A.Resize(width=256, height=256),], additional_targets={"image0": "image"},
-)
+kernal = np.zeros((IMAGE_SIZE, IMAGE_SIZE))
+kernal[IMAGE_SIZE//2, IMAGE_SIZE//2] = 1
+PSF = torch.from_numpy(normalise(gaussian(kernal, SIGMA)))
 
-transform_only_input = A.Compose(
-    [
-        A.HorizontalFlip(p=0.5),
-        A.ColorJitter(p=0.2),
-        A.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], max_pixel_value=255.0,),
-        ToTensorV2(),
-    ]
-)
-
-transform_only_mask = A.Compose(
-    [
-        A.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], max_pixel_value=255.0,),
-        ToTensorV2(),
-    ]
-)
-
-transforms = transforms.Compose([
-    transforms.Normalize(
+transforms = transform.Compose([
+    transform.Normalize(
         [0.5 for _ in range(CHANNELS_IMG)],   # generalise for multi channel
         [0.5 for _ in range(CHANNELS_IMG)],
     ),
-])   
+])
+
+transformsCell = transform.Compose([
+    transform.ToTensor(),
+    transform.Grayscale(),
+])
