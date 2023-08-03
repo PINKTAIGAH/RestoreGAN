@@ -122,7 +122,7 @@ def main():
             config.CHECKPOINT_DISC, disc, opt_disc, config.LEARNING_RATE,
         )
 
-    train_dataset = JitteredDataset(config.IMAGE_SIZE, config.IMAGE_JITTER, length=1024)
+    train_dataset = JitteredDataset(config.IMAGE_SIZE, 1024, config.MAX_JITTER)
     train_loader = DataLoader(
         train_dataset,
         batch_size=config.BATCH_SIZE,
@@ -131,8 +131,17 @@ def main():
     )
     g_scaler = torch.cuda.amp.GradScaler()
     d_scaler = torch.cuda.amp.GradScaler()
-    val_dataset = JitteredDataset(config.IMAGE_SIZE, config.IMAGE_JITTER, length=256) 
+    val_dataset = JitteredDataset(config.IMAGE_SIZE, 256, config.MAX_JITTER) 
     val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
+
+    schedular_disc = optim.lr_scheduler.ReduceLROnPlateau(opt_disc, mode="min",
+                                                          factor=config.SCHEDULAR_DECAY,
+                                                          patience=config.SCHEDULAR_PATIENCE,
+                                                          verbose=True)
+    schedular_gen = optim.lr_scheduler.ReduceLROnPlateau(opt_gen, mode="min",
+                                                         factor=config.SCHEDULAR_DECAY,
+                                                         patience=config.SCHEDULAR_PATIENCE,
+                                                         verbose=True)
 
     for epoch in range(config.NUM_EPOCHS):
         train_fn(
@@ -145,8 +154,6 @@ def main():
             save_checkpoint(disc, opt_disc, filename=config.CHECKPOINT_DISC)
 
         save_some_examples(gen, val_loader, epoch, folder="evaluation", filter=filter)
-                
-
 
 if __name__ == "__main__":
     main()
