@@ -23,9 +23,9 @@ class JitteredDataset(Dataset):
         shifts = self.filter.generateShiftsHorizontal()
         # shiftsVertical = self.filter.generateShiftsVertical()
         
-        shiftedImage = self.filter.newShiftImageHorizontal(groundTruth, shifts, 
+        shiftedImage = self.filter.shiftImageHorizontal(groundTruth, shifts, 
                                                            isBatch=False,)
-        # shiftedImageVertical = self.filter.newShiftImageVertical(groundTruth,
+        # shiftedImageVertical = self.filter.shiftImageVertical(groundTruth,
                                                       # shiftsVertical, isBatch=False)
 
         shiftedImage = torch.squeeze(shiftedImage, 0)
@@ -49,8 +49,7 @@ if __name__ == "__main__":
     filter = ImageGenerator(config.PSF, config.MAX_JITTER, config.IMAGE_SIZE,)
 
     for x, y, shifts in loader:
-        print(x.shape, y.shape, shifts.shape)
-        z = filter.newShiftImageHorizontal(x, -shifts, isBatch=True)
+        z = filter.shiftImageHorizontal(x, -shifts, isBatch=True)
 
         save_image(x, "images/Jittered.png")
         save_image(y, "images/Unjittered.png")
