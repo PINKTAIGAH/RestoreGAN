@@ -32,7 +32,7 @@ class ImageGenerator(object):
         shiftX = torch.zeros_like(shiftY)
         return torch.cat([shiftX, shiftY], 1) * config.MAX_JITTER
     
-    def shiftImageHorizontal(self, input, shifts, isBatch=False,):
+    def shiftImageHorizontal(self, input, shifts, isBatch=False, train=False):
         if not isBatch:
             input = torch.unsqueeze(input, 0)
             shifts = torch.unsqueeze(shifts, 0)
@@ -48,13 +48,17 @@ class ImageGenerator(object):
             singleImage = torch.unsqueeze(torch.clone(input[i]), 0)
             singleShift = torch.clone(shifts[i])
             for j in range(H):
+                if train:
+                    singleImage, singleShift = singleImage.to(config.DEVICE),
+                                            singleShift.to(config.DEVICE)
+                print(i, j, singleImage.get_device(), singleShift.get_device())
                 output[i, :, j, :] = translate(singleImage[:, :, j, :],
                                                torch.unsqueeze(singleShift[j], 0),
                                                padding_mode="reflection",
                                                align_corners=False)
         return output
     
-    def shiftImageVertical(self, input, shifts, isBatch=True, device="cpu"):
+    def shiftImageVertical(self, input, shifts, isBatch=True, train=False):
         if not isBatch:
             input = torch.unsqueeze(input, 0)
             shifts = torch.unsqueeze(shifts, 0)
@@ -69,6 +73,10 @@ class ImageGenerator(object):
             singleImage = torch.unsqueeze(torch.clone(input[i]), 0)
             singleShift = torch.clone(shifts[i])
             for j in range(W):
+                if train:
+                    singleImage, singleShift = singleImage.to(config.DEVICE),
+                                            singleShift.to(config.DEVICE)
+                print(i, j, singleImage.get_device(), singleShift.get_device())
                 output[i, :, :, j] = translate(singleImage[:, :, :, j],
                                                torch.unsqueeze(singleShift[j], 0),
                                                padding_mode="reflection",
