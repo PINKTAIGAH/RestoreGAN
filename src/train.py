@@ -29,12 +29,11 @@ def train_fn(
 
         # Train Discriminator
         with torch.cuda.amp.autocast():
-            vector_fake = gen(img_jittered).to(config.DEVICE)        # generated unjittered image
+            vector_fake = gen(img_jittered)        # generated unjittered image
             vector_fake = torch.cat([vector_fake, torch.zeros_like(vector_fake)], 2)
-            img_fake = filter.shiftImageHorizontal(img_jittered.to(torch.device("cpu")),
-                                    vector_fake.to(torch.device("cpu")), isBatch=True)
-            print(img_fake.get_device(), img_jittered.get_device(),
-                    vector_fake.get_device() )
+            print(vector_fake.get_device(), img_jittered.get_device())
+            img_fake = filter.shiftImageHorizontal(img_jittered, vector_fake,
+                                                   isBatch=True)
             img_fake.requires_grad_()
             #print(img_fake)
 
@@ -153,10 +152,10 @@ def main():
 
         save_some_examples(gen, val_loader, epoch, folder="evaluation", filter=filter)
 
-        #with open("raw_data/disc_loss.txt", "w") as f:
-        #    f.write(f"{D_loss.mean().item():.4f}")
-        #with open("raw_data/gen_loss.txt", "w") as f:
-        #    f.write(f"{G_loss.mean().item():.4f}")
+        with open("raw_data/disc_loss.txt", "w") as f:
+            f.write(f"{D_loss.mean().item():.4f}")
+        with open("raw_data/gen_loss.txt", "w") as f:
+            f.write(f"{G_loss.mean().item():.4f}")
 
 if __name__ == "__main__":
     main()
