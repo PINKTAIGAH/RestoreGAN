@@ -1,3 +1,4 @@
+from time import time
 import torch
 import utils
 import config
@@ -45,11 +46,13 @@ if __name__ == "__main__":
 
     N = 256 
     dataset = JitteredDataset(N, 20, 2)
-    loader = DataLoader(dataset, batch_size=5)
+    loader = DataLoader(dataset, batch_size=16)
     filter = ImageGenerator(config.PSF, config.MAX_JITTER, config.IMAGE_SIZE,)
 
     for x, y, shifts in loader:
+        t1 = time()
         z = filter.shiftImageHorizontal(x, -shifts, isBatch=True)
+        print(f"Time taken to shift a batch of 16 is {time()-t1} s")
 
         save_image(x, "images/Jittered.png")
         save_image(y, "images/Unjittered.png")

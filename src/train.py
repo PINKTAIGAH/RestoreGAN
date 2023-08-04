@@ -30,7 +30,7 @@ def train_fn(
         # Train Discriminator
         with torch.cuda.amp.autocast():
             vector_fake = gen(img_jittered)        # generated unjittered image
-            vector_fake = torch.cat([vector_fake, torch.zeros_like(vector_fake)], 1)
+            vector_fake = torch.cat([vector_fake, torch.zeros_like(vector_fake)], 2)
             print(vector_fake.shape)
             img_fake = filter.shiftImageHorizontal(img_jittered, vector_fake,
                                                    isBatch=True)
