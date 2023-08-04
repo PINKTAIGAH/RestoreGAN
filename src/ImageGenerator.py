@@ -50,7 +50,6 @@ class ImageGenerator(object):
             for j in range(H):
                 if train:
                     singleImage, singleShift = singleImage.to(config.DEVICE), singleShift.to(config.DEVICE)
-                print(i, j, singleImage.get_device(), singleShift.get_device())
                 output[i, :, j, :] = translate(singleImage[:, :, j, :],
                                                torch.unsqueeze(singleShift[j], 0),
                                                padding_mode="reflection",
