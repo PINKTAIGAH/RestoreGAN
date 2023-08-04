@@ -32,7 +32,7 @@ class ImageGenerator(object):
         shiftX = torch.zeros_like(shiftY)
         return torch.cat([shiftX, shiftY], 1) * config.MAX_JITTER
     
-    def shiftImageHorizontal(self, input, shifts, isBatch=False):
+    def shiftImageHorizontal(self, input, shifts, isBatch=False,):
         if not isBatch:
             input = torch.unsqueeze(input, 0)
             shifts = torch.unsqueeze(shifts, 0)
@@ -45,7 +45,7 @@ class ImageGenerator(object):
         B, _, H, _ = input.shape
         output = torch.zeros_like(input)
         for i in range(B):
-            singleImage = torch.unsqueeze(torch.clone(input[i]),0)
+            singleImage = torch.unsqueeze(torch.clone(input[i]), 0)
             singleShift = torch.clone(shifts[i])
             for j in range(H):
                 output[i, :, j, :] = translate(singleImage[:, :, j, :],
@@ -54,7 +54,7 @@ class ImageGenerator(object):
                                                align_corners=False)
         return output
     
-    def shiftImageVertical(self, input, shifts, isBatch=True):
+    def shiftImageVertical(self, input, shifts, isBatch=True, device="cpu"):
         if not isBatch:
             input = torch.unsqueeze(input, 0)
             shifts = torch.unsqueeze(shifts, 0)
@@ -66,7 +66,7 @@ class ImageGenerator(object):
         B, _, _, W = input.shape
         output = torch.zeros_like(input)
         for i in range(B):
-            singleImage = torch.unsqueeze(torch.clone(input[i]),0)
+            singleImage = torch.unsqueeze(torch.clone(input[i]), 0)
             singleShift = torch.clone(shifts[i])
             for j in range(W):
                 output[i, :, :, j] = translate(singleImage[:, :, :, j],
