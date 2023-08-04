@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 import config
 from JitterFilter import JitterFilter
+from ImageGenerator import ImageGenerator
 from dataset import JitteredDataset  
 from generator import Generator, initialiseWeights
 from discriminator import Discriminator, initialiseWeights
@@ -29,8 +30,10 @@ def train_fn(
         # Train Discriminator
         with torch.cuda.amp.autocast():
             vector_fake = gen(img_jittered)        # generated unjittered image
-            #print(vector_fake)
-            img_fake = filter.rowDejitterBatch(img_jittered, vector_fake)
+            vector_fake = torch.cat([vector_fake, torch.zeros_like(vector_fake)], 1)
+            print(vector_fake.shape)
+            img_fake = filter.shiftImageHorizontal(img_jittered, vector_fake,
+                                                   isBatch=True)
             img_fake.requires_grad_()
             #print(img_fake)
 
@@ -93,7 +96,7 @@ def train_fn(
 def main():
     disc = Discriminator(config.CHANNELS_IMG, featuresD=16).to(config.DEVICE)
     gen = Generator(inChannel=config.CHANNELS_IMG,
-                    scalingFactor=config.SCHEDULAR_STEP,
+                    scalingFactor=config.SCALING_FACTOR,
                     outChannel=config.CHANNELS_OUT,
                     imageSize=config.IMAGE_SIZE).to(config.DEVICE)
     initialiseWeights(disc)
@@ -106,14 +109,7 @@ def main():
 
     LOSS_CONTENT = nn.L1Loss()
     LOSS_JITTER = nn.MSELoss()
-    filter = JitterFilter()
-
-    schedular_disc = optim.lr_scheduler.StepLR(opt_disc,
-                                               step_size=config.SCHEDULAR_STEP,
-                                               gamma=0.1, verbose=True,)
-    schedular_gen = optim.lr_scheduler.StepLR(opt_gen,
-                                               step_size=config.SCHEDULAR_STEP,
-                                               gamma=0.1, verbose=True,)
+    filter = ImageGenerator(config.PSF, config.MAX_JITTER, config.IMAGE_SIZE)
 
     if config.LOAD_MODEL:
         load_checkpoint(

@@ -164,6 +164,7 @@ def test():
     predicition = model(x)
     print(predicition.shape)
     print(ideal.shape)
+    
 
 if __name__ == "__main__":
     test()
