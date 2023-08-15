@@ -1,21 +1,15 @@
+import numpy as np
 import torch
 import config
-import numpy as np
 from torchvision.utils import save_image
 import torch.nn.functional as F
 
-"""
-Input/Output
-"""
-
-def save_some_examples(gen, val_loader, epoch, folder, filter):
-    x, y , vector= next(iter(val_loader))
-    x, y, vector = x.to(config.DEVICE), y.to(config.DEVICE), vector.to(config.DEVICE)
+def save_some_examples(gen, val_loader, epoch, folder):
+    x, y = next(iter(val_loader))
+    x, y = x.to(config.DEVICE), y.to(config.DEVICE)
     gen.eval()
     with torch.no_grad():
-        vector_fake = gen(x)
-        y_fake = filter.rowDejitterBatch(x, vector_fake)
-
+        y_fake = gen(x)
         y_fake = y_fake * 0.5 + 0.5  # remove normalization#
         save_image(y_fake, folder + f"/y_gen_{epoch}.png")
         save_image(x * 0.5 + 0.5, folder + f"/input_{epoch}.png")
@@ -31,6 +25,16 @@ def save_checkpoint(model, optimizer, filename="my_checkpoint.pth.tar"):
     }
     torch.save(checkpoint, filename)
 
+def findCorrelation(gen, val_loader,):
+    x, y = next(iter(val_loader))
+    x, y = x.to(config.DEVICE), y.to(config.DEVICE)
+    gen.eval()
+    with torch.no_grad():
+        y_fake = gen(x)
+        y_fake = y_fake * 0.5 + 0.5  # remove normalization#
+        correlation = corrImage(y, y_fake)
+    gen.train()
+    return correlation
 
 def load_checkpoint(checkpoint_file, model, optimizer, lr):
     print("=> Loading checkpoint")
@@ -42,10 +46,6 @@ def load_checkpoint(checkpoint_file, model, optimizer, lr):
     # and it will lead to many hours of debugging \:
     for param_group in optimizer.param_groups:
         param_group["lr"] = lr
-
-"""
-Input manipulation
-"""
 
 def tensorConcatinate(tensorLeft, tensorRight):
     tensorRight = tensorRight.view(-1, tensorRight.shape[-1])
@@ -73,15 +73,20 @@ def findMax(tensor):
 def normaliseTensor(tensor):
     return (tensor-findMin(tensor))/(findMax(tensor) - findMin(tensor))
 
+def adjustArray(array):
+    return (array) / (array.max() - array.min())
+
 def normalise(x):
     if np.sum(x) == 0:
         raise Exception("Divided by zero. Attempted to normalise a zero tensor")
 
     return x/np.sum(x**2)
 
-"""
-WGAN graident penalty
-"""
+def corrImage(img1, img2):
+    if img1.shape != img2.shape:
+        raise Exception("Shape of both images must be of the same shape")
+
+    return torch.sum((img1*img2)**2)/torch.sqrt((img1**2).sum() * (img2**2).sum()).item()
 
 def gradientPenalty(discriminator, realImage, fakeImage, device=torch.device("cpu") ):
 

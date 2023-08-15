@@ -1,4 +1,3 @@
-from time import time
 import torch
 import utils
 import config
@@ -7,53 +6,41 @@ from ImageGenerator import ImageGenerator
 from torchvision.utils import save_image
 
 class JitteredDataset(Dataset):
-    def __init__(self, imageSize, length, maxJitter,):
+    def __init__(self, imageSize, length):
         self.N = imageSize 
         self.length = length
-        self.maxJitter = maxJitter
-        self.filter = ImageGenerator(config.PSF, config.MAX_JITTER, config.IMAGE_SIZE,)
-
+        self.filter = ImageGenerator(config.PSF, config.IMAGE_SIZE,
+                            config.CORRELATION_LENGTH, config.PADDING_WIDTH,
+                                     config.MAX_JITTER)
     def __len__(self):
         return self.length
 
     def __getitem__(self, idx):
 
-        groundTruth, _ = self.filter.generateGroundTruth()
+        groundTruth = self.filter.generateGroundTruth()
+        flowMap = self.filter.generateFlowMap()
+        shifted = self.filter.shift(groundTruth, flowMap)
+
         groundTruth = torch.unsqueeze(groundTruth, 0)
+        shifted = torch.squeeze(shifted, 0)
 
-        shifts = self.filter.generateShiftsHorizontal()
-        # shiftsVertical = self.filter.generateShiftsVertical()
-        
-        shiftedImage = self.filter.shiftImageHorizontal(groundTruth, shifts, 
-                                                           isBatch=False,)
-        # shiftedImageVertical = self.filter.shiftImageVertical(groundTruth,
-                                                      # shiftsVertical, isBatch=False)
-
-        shiftedImage = torch.squeeze(shiftedImage, 0)
-        # shiftedImageVertical = torch.squeeze(shiftedImageVertical, 0)
-
-        shiftedImage = utils.normaliseTensor(shiftedImage)
-        # shiftedImageVertical = utils.normaliseTensor(shiftedImageVertical)
         groundTruth = utils.normaliseTensor(groundTruth)
+        shifted = utils.normaliseTensor(shifted)
 
-        shiftedImage = config.transforms(shiftedImage)
         groundTruth = config.transforms(groundTruth)
-        # shiftedImageVertical = config.transforms(shiftedImageVertical)
+        shifted = config.transforms(shifted)
 
-        return shiftedImage, groundTruth, shifts
+        return shifted, groundTruth
 
 if __name__ == "__main__":
 
-    N = 256 
-    dataset = JitteredDataset(N, 20, 2)
-    loader = DataLoader(dataset, batch_size=16)
-    filter = ImageGenerator(config.PSF, config.MAX_JITTER, config.IMAGE_SIZE,)
+    N = 256
+    dataset = JitteredDataset(N, 2000, )
+    loader = DataLoader(dataset, batch_size=5)
 
-    for x, y, shifts in loader:
-        t1 = time()
-        z = filter.shiftImageHorizontal(x, -shifts, isBatch=True)
-        print(f"Time taken to shift a batch of 16 is {time()-t1} s")
+    for i, images in enumerate(loader):
+        x, y = images
+        if i == 0:
+            save_image(x, "images/Jittered.png")
+            save_image(y, "images/Unjittered.png")
 
-        save_image(x, "images/Jittered.png")
-        save_image(y, "images/Unjittered.png")
-        save_image(z, "images/Dejittered.png")

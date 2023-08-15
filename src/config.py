@@ -1,8 +1,9 @@
-import numpy as np 
-import torch
 from skimage.filters import gaussian
+import numpy as np
+import torch
 from torch.utils.tensorboard.writer import SummaryWriter
 from torchvision.transforms import transforms as transform
+
 
 def normalise(x):
     if np.sum(x) == 0:
@@ -11,35 +12,39 @@ def normalise(x):
     return x/np.sum(x**2)
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-#TRAIN_DIR = "/home/giorgio/Desktop/cell_dataset/train/"
-TRAIN_DIR = "/home/brunicam/myscratch/p3_scratch/cell_dataset/train/"
-#VAL_DIR = "/home/giorgio/Desktop/cell_dataset/val/"
-VAL_DIR = "/home/brunicam/myscratch/p3_scratch/cell_dataset/val/"
+TRAIN_DIR = "/home/giorgio/Desktop/p06_images/train/"
+# TRAIN_DIR = "/home/brunicam/myscratch/p3_scratch/cell_dataset/train/"
+VAL_DIR = "/home/giorgio/Desktop/p06_images/val/"
+# VAL_DIR = "/home/brunicam/myscratch/p3_scratch/cell_dataset/val/"
+BATCH_SIZE = 32
 LEARNING_RATE = 1e-4
 SCHEDULAR_DECAY = 0.5
 SCHEDULAR_PATIENCE = 20
-BATCH_SIZE = 16
 NUM_WORKERS = 2
 MAX_JITTER = 4
-IMAGE_SIZE = 128
-IMAGE_JITTER = 5 
+PADDING_WIDTH = 30
+IMAGE_SIZE = 256 
+NOISE_SIZE = IMAGE_SIZE - PADDING_WIDTH*2
+SIGMA = 20
 CHANNELS_IMG = 1 
 CHANNELS_OUT = 1
-SIGMA = 10 
+CORRELATION_LENGTH = 10
+NUM_EPOCHS =  1000
 LAMBDA_CONTENT = 1.0
 LAMBDA_JITTER = 1.0
 LAMBDA_GP = 10
 SCALING_FACTOR = 6
-NUM_EPOCHS = 500
 LOAD_MODEL = False 
 SAVE_MODEL = True
 CHECKPOINT_DISC = "../models/disc.pth.tar"
 CHECKPOINT_GEN = "../models/gen.pth.tar"
 WRITER_REAL = SummaryWriter("../runs/real")
 WRITER_FAKE = SummaryWriter("../runs/fake")
+# WRITER_REAL = SummaryWriter("/home/brunicam/myscratch/p3_scratch/runs/real")
+# WRITER_FAKE = SummaryWriter("/home/brunicam/myscratch/p3_scratch/runs/fake")
 
-kernal = np.zeros((IMAGE_SIZE, IMAGE_SIZE))
-kernal[IMAGE_SIZE//2, IMAGE_SIZE//2] = 1
+kernal = np.zeros((NOISE_SIZE, NOISE_SIZE))
+kernal[NOISE_SIZE//2, NOISE_SIZE//2] = 1
 PSF = torch.from_numpy(normalise(gaussian(kernal, SIGMA)))
 
 transforms = transform.Compose([
@@ -51,5 +56,6 @@ transforms = transform.Compose([
 
 transformsCell = transform.Compose([
     transform.ToTensor(),
+    transform.RandomCrop(IMAGE_SIZE),
     transform.Grayscale(),
 ])
