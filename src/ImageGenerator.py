@@ -42,6 +42,7 @@ class ImageGenerator(Dataset):
         shiftMap = np.empty((self.imageHight, self.imageHight))
         waveletCenters = np.arange(0, self.imageHight, self.correlationLength*3)
 
+<<<<<<< HEAD
         for i in range(self.imageHight):
             x = np.arange(self.imageHight)
             yFinal = np.zeros_like(x, dtype=np.float64)
@@ -52,6 +53,30 @@ class ImageGenerator(Dataset):
                 yFinal += utils.adjustArray(y * yWavelet)*jitter*2
             shiftMap[i] = yFinal
         return torch.from_numpy(shiftMap)
+=======
+        B, _, H, _ = input.shape
+        output = torch.zeros_like(input)
+        for i in range(B):
+            singleImage = torch.unsqueeze(torch.clone(input[i]), 0)
+            singleShift = torch.clone(shifts[i])
+            for j in range(H):
+                if train:
+                    singleImage, singleShift = singleImage.to(config.DEVICE), singleShift.to(config.DEVICE)
+                output[i, :, j, :] = translate(singleImage[:, :, j, :],
+                                               torch.unsqueeze(singleShift[j], 0),
+                                               padding_mode="reflection",
+                                               align_corners=False)
+        return output
+    
+    def shiftImageVertical(self, input, shifts, isBatch=True, train=False):
+        if not isBatch:
+            input = torch.unsqueeze(input, 0)
+            shifts = torch.unsqueeze(shifts, 0)
+        if len(input.shape) != 4:
+            raise Exception("Input image must be of dimention 4: (B, C, H, W)")
+        if len(shifts.shape) !=3:
+            raise Exception("Shifts must be of the shape (B, H, 2)")
+>>>>>>> 4e3325d2ed8c3044ebaea0f298a39310a1a27138
 
     def generateFlowMap(self,):
         shiftMap = self.generateShiftMap()
