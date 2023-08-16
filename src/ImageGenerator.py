@@ -21,13 +21,15 @@ class ImageGenerator(Dataset):
         self.maxJitter = maxJitter
 
         identifyAffine = torch.tensor([[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]])
-        self.identityFlowMap = F.affine_grid(identifyAffine,
-                                             [1, 1, self.imageHight, self.imageHight]) 
+        self.identityFlowMap = torch.squeeze(F.affine_grid(identifyAffine,
+                                             [1, 1, self.imageHight,
+                                              self.imageHight]), 0) 
 
     def generateGroundTruth(self):
 
         whiteNoise = torch.randn(*self.ftPsf.shape)
         groundTruth = torch.fft.ifft2(self.ftPsf * torch.fft.fft2(whiteNoise))  
+        groundTruth = torch.unsqueeze(groundTruth, 0)
         return self.pad(torch.real(groundTruth).type(torch.float32))
 
     def wavelet(self, x, x_0=0.0, std=1.0):
@@ -62,19 +64,30 @@ class ImageGenerator(Dataset):
 
     def generateFlowMap(self,):
         shiftMap = self.generateShiftMap()
-        step = self.identityFlowMap[0, 0, 1, 0] - self.identityFlowMap[0, 0, 0, 0]   
+        step = self.identityFlowMap[0, 1, 0] - self.identityFlowMap[0, 0, 0]   
         
         flowMapShift, flowMapUnshift = (torch.clone(self.identityFlowMap),
                                         torch.clone(self.identityFlowMap))
-        flowMapShift[:, :, :, 0] += torch.unsqueeze(shiftMap*step, 0) 
-        flowMapUnshift[:, :, :, 0] -= torch.unsqueeze(shiftMap*step, 0)
+        flowMapShift[:, :, 0] += shiftMap*step 
+        flowMapUnshift[:, :, 0] -= shiftMap*step
         
         return flowMapShift, flowMapUnshift, shiftMap
 
-    def shift(self, input, flowMap):
-        input = torch.unsqueeze(torch.unsqueeze(input, 0) ,0)
-        return F.grid_sample(input, flowMap, mode="bicubic", padding_mode="zeros",
+    def shift(self, input, flowMap, isBatch=True):
+        if not isBatch:
+            input = torch.unsqueeze(input, 0)
+            flowMap = torch.unsqueeze(flowMap, 0)
+
+        assert len(input.shape) == 4 and len(flowMap.shape) == 4,\
+                "Input image and flowMap must have shape 4"
+        
+        output =  F.grid_sample(input, flowMap, mode="bicubic", padding_mode="zeros",
                          align_corners=False)
+
+        if not isBatch:
+            return torch.squeeze(output, 0)
+
+        return output
 
 def test():
 
@@ -84,9 +97,9 @@ def test():
     t1 = time()
     groundTruth = filter.generateGroundTruth()
     flowMapShift, flowMapUnshift, shiftMap = filter.generateFlowMap()
-    shifted = torch.squeeze(filter.shift(groundTruth, flowMapShift), 0)
+    shifted = filter.shift(groundTruth, flowMapShift, isBatch=False)
     t2 = time()
-    unshifted = filter.shift(shifted[0], flowMapUnshift)
+    unshifted = filter.shift(shifted, flowMapUnshift, isBatch=False)
     t3 = time()
 
     x = np.arange(config.IMAGE_SIZE)
@@ -98,10 +111,10 @@ def test():
     plt.show()
 
     fig, ((ax1,ax2),(ax3, ax4)) = plt.subplots(2, 2)
-    ax1.imshow(groundTruth, cmap="gray")
+    ax1.imshow(groundTruth[0], cmap="gray")
     ax2.imshow(shifted[0], cmap="gray")
-    ax3.imshow(unshifted[0, 0], cmap="gray")
-    ax4.imshow(groundTruth - unshifted[0, 0], cmap="gray")
+    ax3.imshow(unshifted[0], cmap="gray")
+    ax4.imshow(groundTruth[0] - unshifted[0], cmap="gray")
     plt.show()
     print(f"Time taken to generate ground truth and shift: {t2-t1} s")
     print(f"Time taken to unshft image: {t3-t2} s")

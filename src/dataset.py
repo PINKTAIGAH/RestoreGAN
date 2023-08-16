@@ -19,6 +19,7 @@ class JitteredDataset(Dataset):
 
         groundTruth = self.filter.generateGroundTruth()
         flowMapShift, flowMapUnshift, _ = self.filter.generateFlowMap()
+        print(f"ground truth: {groundTruth.shape} \n flowMapShift: {flowMapShift.shape}")
         shifted = self.filter.shift(groundTruth, flowMapShift)
 
         groundTruth = torch.unsqueeze(groundTruth, 0)
@@ -41,6 +42,8 @@ if __name__ == "__main__":
 
     for i, images in enumerate(loader):
         x, y, unshiftMap = images
+        
+
         if i == 0:
             save_image(x, "images/Jittered.png")
             save_image(y, "images/Unjittered.png")
