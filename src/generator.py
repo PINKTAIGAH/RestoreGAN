@@ -65,7 +65,7 @@ class ResBlock(nn.Module):
 
 class SixthBlock(nn.Module):
 
-    def __init__(self, inChannel=128, outChannel=2, A=1):
+    def __init__(self, inChannel=128, outChannel=2):
         super().__init__()
 
         self.sixthBlock = nn.Sequential(
@@ -75,10 +75,8 @@ class SixthBlock(nn.Module):
             nn.Tanh(),          # CHANGE TO EXPANDED TANH
         )
 
-        self.A = A
-
     def forward(self, x):
-        return self.sixthBlock(x)*self.A
+        return self.sixthBlock(x)
 
 class FullyConnected(nn.Module):
 
@@ -97,7 +95,7 @@ class FullyConnected(nn.Module):
         return self.fullyConnected(x)
 
 class Generator(nn.Module):
-    def __init__(self, imageSize, scalingFactor, inChannel=1, outChannel=2,):
+    def __init__(self, imageSize, inChannel=1, outChannel=2,):
         super().__init__()
 
         self.inputFeatures = int(imageSize/4 - 10)
@@ -113,8 +111,7 @@ class Generator(nn.Module):
         ### out channel ==> 128 + 128 from  skip connection
         self.down4 = ResBlock(inChannel=128)
         ### out channel ==> 128 + 128 from skip connection
-        self.down5 = SixthBlock(inChannel=128, outChannel=outChannel,
-                                A=scalingFactor,)
+        self.down5 = SixthBlock(inChannel=128, outChannel=outChannel,) 
         ### out channels = 2
         self.down6 = FullyConnected(inChannel=outChannel,
                                     inFeatures=self.inputFeatures**2,
@@ -124,15 +121,15 @@ class Generator(nn.Module):
     def forward(self, x):
 
         d1 = self.down1(x)
-        print(f"d1 shape ==> {d1.shape}")
+        # print(f"d1 shape ==> {d1.shape}")
         d2 = self.down2(d1)
-        print(f"d2 shape ==> {d2.shape}")
+        # print(f"d2 shape ==> {d2.shape}")
         d3 = self.down3(d2)
-        print(f"d3 shape ==> {d3.shape}")
+        # print(f"d3 shape ==> {d3.shape}")
         d4 = self.down4(d3)
-        print(f"d4 shape ==> {d4.shape}")
+        # print(f"d4 shape ==> {d4.shape}")
         d5 = self.down5(d4)
-        print(f"d5 shape ==> {d5.shape}")
+        # print(f"d5 shape ==> {d5.shape}")
         d6 = self.down6(d5)
 
         output = torch.reshape(
@@ -151,7 +148,7 @@ def test():
     N = 128 
     x = torch.randn((16, 1, N, N))
     ideal = torch.rand((16, N, N, 2))
-    model = Generator(imageSize=N, scalingFactor=config.MAX_JITTER, inChannel=1,
+    model = Generator(imageSize=N, inChannel=1,
                       outChannel=2)
     initialiseWeights(model)
     predicition = model(x)

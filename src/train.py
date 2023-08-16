@@ -94,8 +94,7 @@ def train_fn(
 
 def main():
     disc = Discriminator(config.CHANNELS_IMG, featuresD=16).to(config.DEVICE)
-    gen = Generator(inChannel=config.CHANNELS_IMG,
-                    scalingFactor=config.SCALING_FACTOR,
+    gen = Generator(inChannel=config.CHANNELS_IMG, 
                     outChannel=config.CHANNELS_OUT,
                     imageSize=config.IMAGE_SIZE).to(config.DEVICE)
     initialiseWeights(disc)
@@ -119,7 +118,7 @@ def main():
             config.CHECKPOINT_DISC, disc, opt_disc, config.LEARNING_RATE,
         )
 
-    train_dataset = JitteredDataset(config.IMAGE_SIZE, 1024, config.MAX_JITTER)
+    train_dataset = JitteredDataset(config.IMAGE_SIZE, 1024)
     train_loader = DataLoader(
         train_dataset,
         batch_size=config.BATCH_SIZE,
@@ -128,7 +127,7 @@ def main():
     )
     g_scaler = torch.cuda.amp.GradScaler()
     d_scaler = torch.cuda.amp.GradScaler()
-    val_dataset = JitteredDataset(config.IMAGE_SIZE, 256, config.MAX_JITTER) 
+    val_dataset = JitteredDataset(config.IMAGE_SIZE, 256) 
     val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
 
     schedular_disc = optim.lr_scheduler.ReduceLROnPlateau(opt_disc, mode="min",
