@@ -22,19 +22,17 @@ def train_fn(
     loop = tqdm(loader, leave=True)
     # step = 0
 
-    for idx, (img_jittered, img_truth, vector_truth) in enumerate(loop):
+    for idx, (img_jittered, img_truth, unshift_map_truth) in enumerate(loop):
         img_jittered = img_jittered.to(config.DEVICE)
         img_truth = img_truth.to(config.DEVICE)
-        vector_truth = vector_truth.to(torch.float32).to(config.DEVICE)
+        unshift_map_truth = unshift_map_truth.to(torch.float32).to(config.DEVICE)
 
         # Train Discriminator
         with torch.cuda.amp.autocast():
-            vector_fake = gen(img_jittered)        # generated unjittered image
-            vector_fake = torch.cat([vector_fake, torch.zeros_like(vector_fake)], 2)
+            unshift_map_fake = gen(img_jittered)        # generated unjittered image
             #print(vector_fake.get_device(), img_jittered.get_device())
             
-            img_fake = filter.shiftImageHorizontal(img_jittered, vector_fake,
-                                                    isBatch=True, train=True)
+            img_fake = filter.shift(img_jittered, unshift_map_fake, isBatch=True,)
             img_fake.requires_grad_()
             #print(img_fake)
 
@@ -48,7 +46,7 @@ def train_fn(
             )
 
             loss_content = content_loss(img_truth, img_fake)
-            loss_jitter = jitter_loss(vector_truth, vector_fake)
+            loss_jitter = jitter_loss(unshift_map_truth, unshift_map_fake)
 
             loss_disc = (
                 loss_adverserial_disc + loss_content*config.LAMBDA_CONTENT + 
@@ -90,8 +88,8 @@ def train_fn(
 
            # step +=1
     
-    d_scaler.step(schedular_disc)
-    g_scaler.step(schedular_gen)
+    # d_scaler.step(schedular_disc)
+    # g_scaler.step(schedular_gen)
     return loss_disc, loss_gen 
 
 def main():
@@ -110,7 +108,8 @@ def main():
 
     LOSS_CONTENT = nn.L1Loss()
     LOSS_JITTER = nn.MSELoss()
-    filter = ImageGenerator(config.PSF, config.MAX_JITTER, config.IMAGE_SIZE)
+    filter = ImageGenerator(config.PSF, config.IMAGE_SIZE, config.CORRELATION_LENGTH,
+                            config.PADDING_WIDTH, config.MAX_JITTER)
 
     if config.LOAD_MODEL:
         load_checkpoint(
@@ -153,10 +152,10 @@ def main():
 
         save_some_examples(gen, val_loader, epoch, folder="evaluation", filter=filter)
 
-        with open("raw_data/disc_loss.txt", "w") as f:
-            f.write(f"{D_loss.mean().item():.4f}")
-        with open("raw_data/gen_loss.txt", "w") as f:
-            f.write(f"{G_loss.mean().item():.4f}")
+        # with open("raw_data/disc_loss.txt", "w") as f:
+            # f.write(f"{D_loss.mean().item():.4f}")
+        # with open("raw_data/gen_loss.txt", "w") as f:
+            # f.write(f"{G_loss.mean().item():.4f}")
 
 if __name__ == "__main__":
     main()

@@ -45,7 +45,4 @@ if __name__ == "__main__":
             save_image(x, "images/Jittered.png")
             save_image(y, "images/Unjittered.png")
             save_image(deshifted, "images/Deshifted.png")
-            print(f"Jittered Shape ==> {x.shape} \n Ground truth Shape ==> {y.shape} \
-            \nUnshift map Shape ==> {unshiftMap.shape}")
-            print("First batch created")
 
