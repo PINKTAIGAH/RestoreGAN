@@ -89,7 +89,7 @@ class FullyConnected(nn.Module):
             nn.Flatten(start_dim=1),
             
             nn.Linear(in_features=inChannel*inFeatures,
-                      out_features=inChannel*outFeatures),
+                      out_features=2*outFeatures),
             nn.ReLU(),
         )
 
@@ -118,32 +118,25 @@ class Generator(nn.Module):
         ### out channels = 2
         self.down6 = FullyConnected(inChannel=outChannel,
                                     inFeatures=self.inputFeatures**2,
-                                    outFeatures=imageSize,)
-        ### out shape = N x 2 x 256
+                                    outFeatures=self.imageSize**2,)
+        ### out shape = B * N * N * 2 (Shape of flow map for unshifting) 
     
-
     def forward(self, x):
 
         d1 = self.down1(x)
-        # print(f"d1 shape ==> {d1.shape}")
-
+        print(f"d1 shape ==> {d1.shape}")
         d2 = self.down2(d1)
-        # print(f"d2 shape ==> {d2.shape}")
-
+        print(f"d2 shape ==> {d2.shape}")
         d3 = self.down3(d2)
-        # print(f"d3 shape ==> {d3.shape}")
-
+        print(f"d3 shape ==> {d3.shape}")
         d4 = self.down4(d3)
-        # print(f"d4 shape ==> {d4.shape}")
-
+        print(f"d4 shape ==> {d4.shape}")
         d5 = self.down5(d4)
-        # print(f"d5 shape ==> {d5.shape}")
-
+        print(f"d5 shape ==> {d5.shape}")
         d6 = self.down6(d5)
-        # print(f"d6 shape ==> {d6.shape}")
 
         output = torch.reshape(
-            d6, (d6.shape[0], self.imageSize, self.outChannel)
+            d6, (d6.shape[0], self.imageSize, self.imageSize, self.outChannel)
         )
 
         return output
@@ -157,14 +150,13 @@ def initialiseWeights(model):
 def test():
     N = 128 
     x = torch.randn((16, 1, N, N))
-    ideal = torch.rand((16, N, 1))
+    ideal = torch.rand((16, N, N, 2))
     model = Generator(imageSize=N, scalingFactor=config.MAX_JITTER, inChannel=1,
-                      outChannel=1)
+                      outChannel=2)
     initialiseWeights(model)
     predicition = model(x)
     print(predicition.shape)
     print(ideal.shape)
-    
 
 if __name__ == "__main__":
     test()
