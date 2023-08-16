@@ -19,12 +19,7 @@ class JitteredDataset(Dataset):
 
         groundTruth = self.filter.generateGroundTruth()
         flowMapShift, flowMapUnshift, _ = self.filter.generateFlowMap()
-        print(f"ground truth: {groundTruth.shape} \n flowMapShift: {flowMapShift.shape}")
-        shifted = self.filter.shift(groundTruth, flowMapShift)
-
-        groundTruth = torch.unsqueeze(groundTruth, 0)
-        shifted = torch.squeeze(shifted, 0)
-        flowMapUnshift = torch.squeeze(flowMapUnshift, 0)
+        shifted = self.filter.shift(groundTruth, flowMapShift, isBatch=False)
 
         groundTruth = utils.normaliseTensor(groundTruth)
         shifted = utils.normaliseTensor(shifted)
@@ -37,16 +32,19 @@ class JitteredDataset(Dataset):
 if __name__ == "__main__":
 
     N = 256
+    filter = ImageGenerator(config.PSF, config.IMAGE_SIZE, config.CORRELATION_LENGTH,
+                            config.PADDING_WIDTH, config.MAX_JITTER)
     dataset = JitteredDataset(N, 2000, )
     loader = DataLoader(dataset, batch_size=5)
 
     for i, images in enumerate(loader):
         x, y, unshiftMap = images
+        deshifted = filter.shift(x, unshiftMap, isBatch=True) 
         
-
         if i == 0:
             save_image(x, "images/Jittered.png")
             save_image(y, "images/Unjittered.png")
+            save_image(deshifted, "images/Deshifted.png")
             print(f"Jittered Shape ==> {x.shape} \n Ground truth Shape ==> {y.shape} \
             \nUnshift map Shape ==> {unshiftMap.shape}")
             print("First batch created")
