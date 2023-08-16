@@ -28,13 +28,12 @@ def train_fn(
         vector_truth = vector_truth.to(torch.float32).to(config.DEVICE)
 
         # Train Discriminator
-        with torch.cuda.amp.autocast(enabled=False):
+        with torch.cuda.amp.autocast():
             vector_fake = gen(img_jittered)        # generated unjittered image
             vector_fake = torch.cat([vector_fake, torch.zeros_like(vector_fake)], 2)
             #print(vector_fake.get_device(), img_jittered.get_device())
             
-            with torch.cuda.amp.autocast(enabled=False,):
-                img_fake = filter.shiftImageHorizontal(img_jittered, vector_fake,
+            img_fake = filter.shiftImageHorizontal(img_jittered, vector_fake,
                                                     isBatch=True, train=True)
             img_fake.requires_grad_()
             #print(img_fake)

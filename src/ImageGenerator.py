@@ -1,10 +1,10 @@
-
 from torch.utils.data import Dataset
 from scipy.ndimage import shift as shiftImage
 import torch
 import config
 import utils
 import numpy as np
+from time import time
 import matplotlib.pyplot as plt
 from torchvision.transforms import Pad
 import torch.nn.functional as F
@@ -33,50 +33,32 @@ class ImageGenerator(Dataset):
     def wavelet(self, x, x_0=0.0, std=1.0):
         return np.exp(-(x-x_0)**2/(2*std**2))
     
-    def generateSignal(self, x):
-        frequency, phase = np.random.uniform(), np.random.uniform(0, 2*np.pi)
-        return np.sin(2*np.pi*50*x + phase)
+    def generateSignal(self, x, frequency):
+        phase = np.random.uniform(0, 2*np.pi)
+        return np.sin(2*np.pi*frequency*x + phase)
 
     def generateShiftMap(self):
         
         shiftMap = np.empty((self.imageHight, self.imageHight))
-        waveletCenters = np.arange(0, self.imageHight, self.correlationLength*3)
+        waveletCentersDistance = np.random.normal(self.correlationLength*3,
+                                                  self.correlationLength)
+        waveletCenters = np.arange(0, self.imageHight, waveletCentersDistance)
 
-<<<<<<< HEAD
         for i in range(self.imageHight):
             x = np.arange(self.imageHight)
             yFinal = np.zeros_like(x, dtype=np.float64)
+
+            frequency = int(np.random.uniform(10, 100))
+            waveletCentersDistance = np.random.normal(self.correlationLength*4.5,
+                                                  self.correlationLength)
+            waveletCenters = np.arange(0, self.imageHight, waveletCentersDistance)
             for _, val in enumerate(waveletCenters):
                 jitter = np.random.uniform(0.5, self.maxJitter)
-                y = self.generateSignal(x)
+                y = self.generateSignal(x, frequency)
                 yWavelet = self.wavelet(x, val, self.correlationLength)
                 yFinal += utils.adjustArray(y * yWavelet)*jitter*2
             shiftMap[i] = yFinal
         return torch.from_numpy(shiftMap)
-=======
-        B, _, H, _ = input.shape
-        output = torch.zeros_like(input)
-        for i in range(B):
-            singleImage = torch.unsqueeze(torch.clone(input[i]), 0)
-            singleShift = torch.clone(shifts[i])
-            for j in range(H):
-                if train:
-                    singleImage, singleShift = singleImage.to(config.DEVICE), singleShift.to(config.DEVICE)
-                output[i, :, j, :] = translate(singleImage[:, :, j, :],
-                                               torch.unsqueeze(singleShift[j], 0),
-                                               padding_mode="reflection",
-                                               align_corners=False)
-        return output
-    
-    def shiftImageVertical(self, input, shifts, isBatch=True, train=False):
-        if not isBatch:
-            input = torch.unsqueeze(input, 0)
-            shifts = torch.unsqueeze(shifts, 0)
-        if len(input.shape) != 4:
-            raise Exception("Input image must be of dimention 4: (B, C, H, W)")
-        if len(shifts.shape) !=3:
-            raise Exception("Shifts must be of the shape (B, H, 2)")
->>>>>>> 4e3325d2ed8c3044ebaea0f298a39310a1a27138
 
     def generateFlowMap(self,):
         shiftMap = self.generateShiftMap()
@@ -87,7 +69,7 @@ class ImageGenerator(Dataset):
         flowMapShift[:, :, :, 0] += torch.unsqueeze(shiftMap*step, 0) 
         flowMapUnshift[:, :, :, 0] -= torch.unsqueeze(shiftMap*step, 0)
         
-        return flowMapShift, flowMapUnshift 
+        return flowMapShift, flowMapUnshift, shiftMap
 
     def shift(self, input, flowMap):
         input = torch.unsqueeze(torch.unsqueeze(input, 0) ,0)
@@ -99,18 +81,30 @@ def test():
     filter = ImageGenerator(config.PSF, config.IMAGE_SIZE, config.CORRELATION_LENGTH,
                             config.PADDING_WIDTH, config.MAX_JITTER)
 
+    t1 = time()
     groundTruth = filter.generateGroundTruth()
-    flowMapShift, flowMapUnshift = filter.generateFlowMap()
+    flowMapShift, flowMapUnshift, shiftMap = filter.generateFlowMap()
     shifted = torch.squeeze(filter.shift(groundTruth, flowMapShift), 0)
+    t2 = time()
     unshifted = filter.shift(shifted[0], flowMapUnshift)
+    t3 = time()
 
-    # x = np.arange(config.IMAGE_SIZE)
+    x = np.arange(config.IMAGE_SIZE)
+    fig, (ax1,ax2, ax3, ax4) = plt.subplots(4, 1)
+    ax1.scatter(x, shiftMap[0])
+    ax2.scatter(x, shiftMap[1])
+    ax3.scatter(x, shiftMap[2])
+    ax4.scatter(x, shiftMap[3])
+    plt.show()
+
     fig, ((ax1,ax2),(ax3, ax4)) = plt.subplots(2, 2)
     ax1.imshow(groundTruth, cmap="gray")
     ax2.imshow(shifted[0], cmap="gray")
     ax3.imshow(unshifted[0, 0], cmap="gray")
     ax4.imshow(groundTruth - unshifted[0, 0], cmap="gray")
     plt.show()
+    print(f"Time taken to generate ground truth and shift: {t2-t1} s")
+    print(f"Time taken to unshft image: {t3-t2} s")
 
 if __name__ == "__main__":
     test()
