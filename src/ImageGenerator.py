@@ -63,6 +63,20 @@ class ImageGenerator(Dataset):
                                              [1, 1, self.imageHight,
                                               self.imageHight]), 0) 
 
+    def _generateEnvelopeCenters(self):
+        """
+        Return array randomised containing centers for every gaussian envelope 
+        in an image row
+
+        Returns
+        -------
+        envelopeCenters: ndArray
+        """
+        envelopeCentersDistance = np.random.normal(self.correlationLength*4.5,
+                                                  self.correlationLength)
+        envelopeCenters = np.arange(0, self.imageHight, envelopeCentersDistance)
+        return envelopeCenters
+
     def generateGroundTruth(self, padImage=True):
         """
         Return an image of white noise convolved with a point spread funtion.
@@ -134,41 +148,103 @@ class ImageGenerator(Dataset):
         phase = np.random.uniform(0, 2*np.pi)
         return np.sin(2*np.pi*frequency*x + phase)
 
-    def generateShiftMap(self):
-        
-        shiftMap = np.empty((self.imageHight, self.imageHight))
-        envelopeCentersDistance = np.random.normal(self.correlationLength*3,
-                                                  self.correlationLength)
-        envelopeCenters = np.arange(0, self.imageHight, envelopeCentersDistance)
+    def generateShiftMatrix(self):
+        """
+        Generate a matrix containing 1D vectors corresponding to the horizontal
+        shift of each pixel in an image. Units of each vector are pixels. Shape of
+        matrix is (H, W)
 
+        Shifts are calculated by apeturing multiple sinusoidal signals with gaussian 
+        envelopes in every row of an image.
+
+        Returns
+        -------
+        shiftMatrix: torch.FloatTensor
+            Matrix containing a 1D vector corresponding to the horizontal shift 
+            of each pixel of an image.
+        """
+        
+        shiftMatrix = np.empty((self.imageHight, self.imageHight))
+
+        # Iterate over image hight
         for i in range(self.imageHight):
             x = np.arange(self.imageHight)
             yFinal = np.zeros_like(x, dtype=np.float64)
 
+            # Random frequency of message signal for each row of image
             frequency = int(np.random.uniform(10, 100))
-            envelopeCentersDistance = np.random.normal(self.correlationLength*4.5,
-                                                  self.correlationLength)
-            envelopeCenters = np.arange(0, self.imageHight, envelopeCentersDistance)
+            envelopeCenters = self._generateEnvelopeCenters()
+            # Iterate over each envelope in a row
             for _, val in enumerate(envelopeCenters):
-                jitter = np.random.uniform(0.5, self.maxJitter)
+                # Random amplitude for each messenge signal
+                amplitude = np.random.uniform(0.5, self.maxJitter)
                 y = self.generateSignal(x, frequency)
                 yEnvelope = self.envelope(x, val, self.correlationLength)
-                yFinal += utils.adjustArray(y * yEnvelope)*jitter*2
-            shiftMap[i] = yFinal
-        return torch.from_numpy(shiftMap)
+                yFinal += utils.adjustArray(y * yEnvelope)*amplitude*2
+            # Assign ndArray containing shift vectors of each row to output matrix
+            shiftMatrix[i] = yFinal
+        return torch.from_numpy(shiftMatrix)
 
     def generateFlowMap(self,):
-        shiftMap = self.generateShiftMap()
+        """
+        Generate a flow map corresponding to a shift matrix.
+
+        Returns a flow map corresponding to a shift matrix, a flow map
+        corresponding to the inverse of the shift matrix and the shift matrix 
+        used to generate the flow maps
+
+        Shape of flow map is (H, W, 2)
+
+        Return
+        ------
+        flowMapShift: torch.TensorFloat
+            Flow map corresponding to an image shift
+        
+        flowMapUnshift: torch.TensorFloat
+            Flow map corresponding to the inverse of an image shift
+
+        shiftMatrix: torch.TensorFloat
+            Matrix containing a 1D vector corresponding to the horizontal shift 
+            of each pixel of an image.
+        """
+        shiftMatrix = self.generateShiftMatrix()
+        # Compute the unit length of the vector space in the identity flow map
         step = self.identityFlowMap[0, 1, 0] - self.identityFlowMap[0, 0, 0]   
         
         flowMapShift, flowMapUnshift = (torch.clone(self.identityFlowMap),
                                         torch.clone(self.identityFlowMap))
-        flowMapShift[:, :, 0] += shiftMap*step 
-        flowMapUnshift[:, :, 0] -= shiftMap*step
+        # Compute the shift in the flow map vector space and add/subtract from 
+        # identity flow map
+        flowMapShift[:, :, 0] += shiftMatrix*step 
+        flowMapUnshift[:, :, 0] -= shiftMatrix*step
         
-        return flowMapShift, flowMapUnshift, shiftMap
+        return flowMapShift, flowMapUnshift, shiftMatrix
 
     def shift(self, input, flowMap, isBatch=True):
+        """
+        Shift an image using optical flow according to the inputted flow map.
+        Input tensor and flowmap can either be a 3D tensors of shape (C, H, W) and
+        (H, W, 2) respectivly if isBatch is False or a 4D tensor of shape (B, C, H, W)
+        and (B, H, W, 2) if isBatch is True
+
+        Parameters
+        ----------
+        input: torch.TensorFloat
+            Image to be shifted 
+
+        flowMap: torch.TensorFloat
+            Flow map to be used in the optical flow transform
+
+        isBatch: bool
+            If False, the input tensor and the flowmap will be reshaped according 
+            to the input shapes required by torch.nn.functional.grid_sample
+
+        Returns
+        -------
+        output: torch.TensorFloat
+            Shifted image 
+        """
+
         if not isBatch:
             input = torch.unsqueeze(input, 0)
             flowMap = torch.unsqueeze(flowMap, 0)
@@ -180,6 +256,7 @@ class ImageGenerator(Dataset):
                          align_corners=False)
 
         if not isBatch:
+            # Resize the output according to the input shape
             return torch.squeeze(output, 0)
 
         return output
