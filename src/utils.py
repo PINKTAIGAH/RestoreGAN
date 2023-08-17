@@ -102,48 +102,133 @@ def load_checkpoint(checkpoint_file, model, optimiser, lr):
 
 def _findMin(tensor):
     """
-    Find minimum value of each batch of image tensor of shape (B, ..., H, W)
+    Find minimum value of each batch of image tensor of shape (B, ..., H, W) and
+    return tensor of same shape containing minimum value at each element for each
+    batch
 
     Parameters
     ----------
     tensor: torch.FloatTensor
-        
+       Input tensor  
+
+    Returns
+    -------
+    minTensor: torch.FloatTensor
+        Tensor containing the minimum value of an image at each batch.
+        Returns tensor of same shape as input
+
+    Note
+    ----
+    Function assumes square images, hence H == W
+    Function assumes only one colour channel
     """
+    # Size of image
     N = tensor.shape[-1]
-    minVals, _ = tensor.view(-1, N*N).min(axis=1)
+    # Reshape tensor to (B, H*W) and find minimum value along axis 1
+    ###Change .view parametes if want to allow for multichannel images###
+    minVals, _ = tensor.view(-1, N*N).min(axis=1) 
     minTensor = torch.ones_like(tensor)
+    # Iterate over batches
     for i in range(minVals.shape[0]):
-       minTensor[i] = minTensor[i]*minVals[i]
+        # Assing minimum pixel value to each element of the image
+        minTensor[i] = minTensor[i]*minVals[i]
     return minTensor
 
-def findMax(tensor):
+def _findMax(tensor):
+    """
+    Find maximum value of each batch of image tensor of shape (B, ..., H, W) and
+    return tensor of same shape containing maximum value at each element for each
+    batch
+
+    Parameters
+    ----------
+    tensor: torch.FloatTensor
+       Input tensor  
+
+    Returns
+    -------
+    maxTensor: torch.FloatTensor
+        Tensor containing the maximum value of an image at each batch.
+        Returns tensor of same shape as input
+
+    Note
+    ----
+    Function assumes square images, hence H == W
+    Function assumes only one colour channel
+    """
+    # Size of image
     N = tensor.shape[-1]
+    # Reshape tensor to (B, H*W) and find minimum value along axis 1
+    ###Change .view parametes if want to allow for multichannel images###
     maxVals, _ = tensor.view(-1, N*N).max(axis=1)
     maxTensor = torch.ones_like(tensor)
+    # Iterate over batches
     for i in range(maxVals.shape[0]):
-       maxTensor[i] = maxTensor[i]*maxVals[i]
+        # Assing minimum pixel value to each element of the image
+        maxTensor[i] = maxTensor[i]*maxVals[i]
     return maxTensor
 
-def normaliseTensor(tensor):
-    return (tensor-findMin(tensor))/(findMax(tensor) - findMin(tensor))
+def normaliseTensor(input):
+    """
+    Normalise image tensor that contains batches. Shape of input is (B, ..., H, W)
+
+    Parameters
+    ----------
+    input: torch.FloatTensor
+        Image tensor to be normalised
+    
+    Returns
+    -------
+    output: torch.FloatTensor
+        Normalised image tensor
+
+    Note
+    ----
+    Function assumes square images, hence H == W
+    Function assumes only one colour channel
+    """
+    return (input-_findMin(input))/(_findMax(input) - _findMin(input))
 
 def adjustArray(array):
+    """
+    Normalise ndArray 
+
+    Parameters
+    ----------
+    input: ndArray
+        array to be normalised
+    
+    Returns
+    -------
+    output: ndArray
+        Normalised array
+    """
     return (array) / (array.max() - array.min())
 
-def normalise(x):
-    if np.sum(x) == 0:
-        raise Exception("Divided by zero. Attempted to normalise a zero tensor")
+def gradientPenalty(discriminator, realImage, fakeImage, device=torch.device("cpu")):
+    """
+    Compute gradient penalty to be appled to Wasserstein-GAN's adverserial loss
+    in order to apply Lipchitz constraint
 
-    return x/np.sum(x**2)
+    Parameters
+    ----------
+    discriminator: torch.nn.Module
+        discriminator neural network of a WGAN
 
-def corrImage(img1, img2):
-    if img1.shape != img2.shape:
-        raise Exception("Shape of both images must be of the same shape")
+    realImage: torch.FloatTensor
+        Tensor constaining ground truth image
 
-    return torch.sum((img1*img2)**2)/torch.sqrt((img1**2).sum() * (img2**2).sum()).item()
+    fakeImage: torch.FloatTensor
+        Tensor containing an image created by a generator neural network
 
-def gradientPenalty(discriminator, realImage, fakeImage, device=torch.device("cpu") ):
+    device: torch.Device, optional
+        Device where genereted tensors should be strored
 
+    Returns
+    -------
+    gradientPenalty: torch.FloatTensor
+        Gradient penalty to be applied to the adverserial loss
+    """
     B, C, H, W = realImage.shape  # Batch, Channel, Hight, Width
 
     # Create interpolated images (mix of real and fake with some random weight)
