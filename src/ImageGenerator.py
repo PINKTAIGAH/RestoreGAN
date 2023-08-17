@@ -10,6 +10,45 @@ from torchvision.transforms import Pad
 import torch.nn.functional as F
 
 class ImageGenerator(Dataset):
+    """
+    A class used to generate white noise images, generate shift flow maps and 
+    to shift images according to a given flow map.
+
+    Parameters
+    ----------
+
+    psf: torch.FloatTensor
+        A 2D point spread function with equal hight and width dimention as the 
+        imageHight parameter
+
+    imageHight: int
+        Hight of image. (Currently class assumes square images, hence imageHight
+        also represents width of image)
+
+    correlationLength: float
+        Represents correlation length of individual instances of jitter in an image.
+        Corresponds to standard deviation of gaussian envelopes in shift generation.
+
+    paddingWidth: int
+        The number of pixels that will be added as padding on each edges of the image.
+
+    maxJitter: float
+        The maximum (and minimum) value of pixel shift. 
+
+
+    Atributes
+    ---------
+
+    ftPsf: torch.ConplexFloatTensor
+        The fourier transform of the psf parameter
+
+    pad: torchvision.transforms.transforms.Pad instances
+        The Pad instance initialised with the paddingWidth parameter
+
+    identityFlowMap: torch.FloatTensor
+        Flow map where each vector represents the position of it's corresponding 
+        pixel in the flow map vector space. Tensor shape is (H, W, 2) 
+    """
 
     def __init__(self, psf, imageHeight, correlationLength, paddingWidth, maxJitter):
         
@@ -20,17 +59,23 @@ class ImageGenerator(Dataset):
         self.pad = Pad(paddingWidth)
         self.maxJitter = maxJitter
 
-        identifyAffine = torch.tensor([[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]])
-        self.identityFlowMap = torch.squeeze(F.affine_grid(identifyAffine,
+        # Using affine grid calculate identity flow map using identity matrix
+        identifyMatrix = torch.tensor([[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]])
+        self.identityFlowMap = torch.squeeze(F.affine_grid(identifyMatrix,
                                              [1, 1, self.imageHight,
                                               self.imageHight]), 0) 
+        print(self.identityFlowMap.shape)
 
-    def generateGroundTruth(self):
+    def generateGroundTruth(self, pad=True):
 
         whiteNoise = torch.randn(*self.ftPsf.shape)
         groundTruth = torch.fft.ifft2(self.ftPsf * torch.fft.fft2(whiteNoise))  
         groundTruth = torch.unsqueeze(groundTruth, 0)
-        return self.pad(torch.real(groundTruth).type(torch.float32))
+        
+        if not pad:
+            return torch.real(groundTruth)
+
+        return self.pad(torch.real(groundTruth))
 
     def wavelet(self, x, x_0=0.0, std=1.0):
         return np.exp(-(x-x_0)**2/(2*std**2))

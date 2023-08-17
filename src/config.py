@@ -45,7 +45,7 @@ WRITER_FAKE = SummaryWriter("../runs/fake")
 
 kernal = np.zeros((NOISE_SIZE, NOISE_SIZE))
 kernal[NOISE_SIZE//2, NOISE_SIZE//2] = 1
-PSF = torch.from_numpy(normalise(gaussian(kernal, SIGMA)))
+PSF = torch.from_numpy(normalise(gaussian(kernal, SIGMA))).type(torch.float32)
 
 transforms = transform.Compose([
     transform.Normalize(
