@@ -92,36 +92,68 @@ class ImageGenerator(Dataset):
 
         return self.pad(torch.real(groundTruth))
 
-    def wavelet(self, x, x_0=0.0, std=1.0):
+    def envelope(self, x, x0=0.0, std=1.0):
         """
+        Return array containing gaussian envelope.
 
+        Parameters
+        ----------
+        x: ndArray
+            input array
+
+        x0: float, optional
+            mean of gaussian envelope
+
+        std: float, optional
+            Standard deviation of gaussian envelope
+
+        Returns
+        -------
+        output: ndArray
+            array containing gaussian envelope
         """
-        return np.exp(-(x-x_0)**2/(2*std**2))
+        return np.exp(-(x-x0)**2/(2*std**2))
     
     def generateSignal(self, x, frequency):
+        """
+        Returns array containing a sinusoidal signal with a randomised phase      
+
+        Parameters
+        ----------
+        x: ndArray
+            input array
+
+        frequency: float
+            frequency of signal
+
+        Returns
+        -------
+        output: ndArray
+            array containing signal
+        """
         phase = np.random.uniform(0, 2*np.pi)
         return np.sin(2*np.pi*frequency*x + phase)
 
     def generateShiftMap(self):
         
         shiftMap = np.empty((self.imageHight, self.imageHight))
-        waveletCentersDistance = np.random.normal(self.correlationLength*3,
+        envelopeCentersDistance = np.random.normal(self.correlationLength*3,
                                                   self.correlationLength)
-        waveletCenters = np.arange(0, self.imageHight, waveletCentersDistance)
+        envelopeCenters = np.arange(0, self.imageHight, envelopeCentersDistance)
 
         for i in range(self.imageHight):
             x = np.arange(self.imageHight)
             yFinal = np.zeros_like(x, dtype=np.float64)
 
             frequency = int(np.random.uniform(10, 100))
-            waveletCentersDistance = np.random.normal(self.correlationLength*4.5,
+            envelopeCentersDistance = np.random.normal(self.correlationLength*4.5,
                                                   self.correlationLength)
-            waveletCenters = np.arange(0, self.imageHight, waveletCentersDistance)
-            for _, val in enumerate(waveletCenters):
+            envelopeCenters = np.arange(0, self.imageHight, envelopeCentersDistance)
+            for _, val in enumerate(envelopeCenters):
                 jitter = np.random.uniform(0.5, self.maxJitter)
                 y = self.generateSignal(x, frequency)
-                yWavelet = self.wavelet(x, val, self.correlationLength)
-                yFinal += utils.adjustArray(y * yWavelet)*jitter*2
+                yEnvelope = self.envelope(x, val, self.correlationLength)
+                yFinal += utils.adjustArray(y * yEnvelope)*jitter*2
             shiftMap[i] = yFinal
         return torch.from_numpy(shiftMap)
 
