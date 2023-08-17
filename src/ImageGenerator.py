@@ -16,7 +16,6 @@ class ImageGenerator(Dataset):
 
     Parameters
     ----------
-
     psf: torch.FloatTensor
         A 2D point spread function with equal hight and width dimention as the 
         imageHight parameter
@@ -38,7 +37,6 @@ class ImageGenerator(Dataset):
 
     Atributes
     ---------
-
     ftPsf: torch.ConplexFloatTensor
         The fourier transform of the psf parameter
 
@@ -64,20 +62,40 @@ class ImageGenerator(Dataset):
         self.identityFlowMap = torch.squeeze(F.affine_grid(identifyMatrix,
                                              [1, 1, self.imageHight,
                                               self.imageHight]), 0) 
-        print(self.identityFlowMap.shape)
 
-    def generateGroundTruth(self, pad=True):
+    def generateGroundTruth(self, padImage=True):
+        """
+        Return an image of white noise convolved with a point spread funtion.
+        Shape of image is (1, H, W). 
+        If padImage parameter is set to True, zero padding will be added to the
+        image according to the paddingWidth parameter.
+
+        Parameters
+        ----------
+        padImage: bool, optional
+            Allow padding of generated image
+
+        Returns
+        -------
+        groundTruth: torch.FloatTensor
+            Tensor containing white noise image.
+        """
 
         whiteNoise = torch.randn(*self.ftPsf.shape)
+        # Convolve white noise with psf using convolution theorem
         groundTruth = torch.fft.ifft2(self.ftPsf * torch.fft.fft2(whiteNoise))  
         groundTruth = torch.unsqueeze(groundTruth, 0)
         
-        if not pad:
+        if not padImage:
+            # Return image without padding
             return torch.real(groundTruth)
 
         return self.pad(torch.real(groundTruth))
 
     def wavelet(self, x, x_0=0.0, std=1.0):
+        """
+
+        """
         return np.exp(-(x-x_0)**2/(2*std**2))
     
     def generateSignal(self, x, frequency):
