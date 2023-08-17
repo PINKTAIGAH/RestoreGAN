@@ -116,7 +116,7 @@ def main():
             config.CHECKPOINT_DISC, disc, opt_disc, config.LEARNING_RATE,
         )
 
-    train_dataset = JitteredDataset(config.IMAGE_SIZE, 1024)
+    train_dataset = JitteredDataset(1024)
     train_loader = DataLoader(
         train_dataset,
         batch_size=config.BATCH_SIZE,
@@ -125,7 +125,7 @@ def main():
     )
     g_scaler = torch.cuda.amp.GradScaler()
     d_scaler = torch.cuda.amp.GradScaler()
-    val_dataset = JitteredDataset(config.IMAGE_SIZE, 256) 
+    val_dataset = JitteredDataset(256) 
     val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
 
     schedular_disc = optim.lr_scheduler.ReduceLROnPlateau(opt_disc, mode="min",
