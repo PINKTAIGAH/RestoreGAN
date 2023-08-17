@@ -3,14 +3,12 @@ from utils import save_checkpoint, load_checkpoint, save_some_examples, gradient
 import torch.nn as nn
 import torch.optim as optim
 import config
-from JitterFilter import JitterFilter
 from ImageGenerator import ImageGenerator
 from dataset import JitteredDataset  
 from generator import Generator, initialiseWeights
 from discriminator import Discriminator, initialiseWeights
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from torchvision.utils import save_image
 
 torch.backends.cudnn.benchmark = True
 

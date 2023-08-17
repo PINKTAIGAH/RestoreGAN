@@ -5,62 +5,116 @@ from torchvision.utils import save_image
 import torch.nn.functional as F
 
 def save_some_examples(gen, val_loader, epoch, folder, filter):
+    """
+    Save examples of output from generator as png images at a specified folder
+
+    Parameters
+    ----------
+    gen: torch.nn.Module instance
+        A generator neural network that will output image (or data required to 
+        generate an output image)
+
+    val_loader: torch.utils.Data.DataLoader instance
+        A dataloader containing dataser that will be input in the generator
+    
+    epoch: int
+        Epoch at which example is being taken
+
+    folder: string
+        Directory where output image will be saved
+
+    filter: torch.utils.Data.Dataset instance
+        Class constining method required to unshift image using generator's 
+        outputted flowmap
+    """
+    # Unpack jittered (x) and ground truth (y) images from dataloader and send to device
     x, y, _ = next(iter(val_loader))
     x, y = x.to(config.DEVICE), y.to(config.DEVICE)
     gen.eval()
     with torch.no_grad():
+        # Generate flow map with generator and use it to unshift jittered image
         unshift_map_fake  = gen(x)
         y_fake = filter.shift(x, unshift_map_fake, isBatch=True)
-        y_fake = y_fake * 0.5 + 0.5  # remove normalization#
-        save_image(y_fake, folder + f"/y_gen_{epoch}.png")
+        # Remove normalisation
+        y_fake = y_fake * 0.5 + 0.5  
+        # Save png of jittered, ground truth and generated unjitted image respectivly
         save_image(x * 0.5 + 0.5, folder + f"/input_{epoch}.png")
         save_image(y * 0.5 + 0.5, folder + f"/label_{epoch}.png")
+        save_image(y_fake, folder + f"/y_gen_{epoch}.png")
     gen.train()
 
 
-def save_checkpoint(model, optimizer, filename="my_checkpoint.pth.tar"):
-    print("=> Saving checkpoint")
+def save_checkpoint(model, optimiser, filename="my_checkpoint.pth.tar"):
+    """
+    Save dictionary of parameters of model and optimiser to specidied directory 
+    in order to be loaded at a later time.
+
+    Parameters
+    ----------
+    model: torch.nn.Module instance
+        Neural network model to be saved
+
+    optimiser: torch.optim instance
+        Optimiser of model to be saved
+
+    filename: string, optional
+        Directory where model and optimiser will be saved
+        
+    """
+    print("==> Saving checkpoint")
+    # Dictionary constaining model and optimiser state parameters
     checkpoint = {
         "state_dict": model.state_dict(),
-        "optimizer": optimizer.state_dict(),
+        "optimizer": optimiser.state_dict(),
     }
     torch.save(checkpoint, filename)
 
-def findCorrelation(gen, val_loader,):
-    x, y = next(iter(val_loader))
-    x, y = x.to(config.DEVICE), y.to(config.DEVICE)
-    gen.eval()
-    with torch.no_grad():
-        y_fake = gen(x)
-        y_fake = y_fake * 0.5 + 0.5  # remove normalization#
-        correlation = corrImage(y, y_fake)
-    gen.train()
-    return correlation
+def load_checkpoint(checkpoint_file, model, optimiser, lr):
+    """
+    Load previously saved model and optimisers by assingning saved dictionaries 
+    containing state parameters to inputted model and optimiser.
 
-def load_checkpoint(checkpoint_file, model, optimizer, lr):
+    Parameters
+    ----------
+    checkpoint_file: string
+        Directory of file containing state dictionaries of previously saved model
+        and optimiser
+
+    model: torch.nn.Module instance
+        Neural network model where state dictionary will be loaded 
+
+    optimiser: torch.optim instance
+        Optimiser of model where state dictionary will be loaded 
+
+    lr: torch.TensorFloat
+        Value of learning rate that is currently being used to train model
+
+    """
     print("=> Loading checkpoint")
     checkpoint = torch.load(checkpoint_file, map_location=config.DEVICE)
+    # Load saved state dictionaries 
     model.load_state_dict(checkpoint["state_dict"])
-    optimizer.load_state_dict(checkpoint["optimizer"])
+    optimiser.load_state_dict(checkpoint["optimizer"])
 
-    # If we don't do this then it will just have learning rate of old checkpoint
-    # and it will lead to many hours of debugging \:
-    for param_group in optimizer.param_groups:
+    # Assign current learning rate to the optimiser
+    for param_group in optimiser.param_groups:
         param_group["lr"] = lr
 
-def tensorConcatinate(tensorLeft, tensorRight):
-    tensorRight = tensorRight.view(-1, tensorRight.shape[-1])
-    tensorLeft = tensorLeft.view(-1, tensorLeft.shape[-1])
-    return torch.cat((tensorLeft, tensorRight), dim=1) 
+def _findMin(tensor):
+    """
+    Find minimum value of each batch of image tensor of shape (B, ..., H, W)
 
-def findMin(tensor):
+    Parameters
+    ----------
+    tensor: torch.FloatTensor
+        
+    """
     N = tensor.shape[-1]
     minVals, _ = tensor.view(-1, N*N).min(axis=1)
     minTensor = torch.ones_like(tensor)
     for i in range(minVals.shape[0]):
        minTensor[i] = minTensor[i]*minVals[i]
     return minTensor
-
 
 def findMax(tensor):
     N = tensor.shape[-1]
@@ -69,7 +123,6 @@ def findMax(tensor):
     for i in range(maxVals.shape[0]):
        maxTensor[i] = maxTensor[i]*maxVals[i]
     return maxTensor
-
 
 def normaliseTensor(tensor):
     return (tensor-findMin(tensor))/(findMax(tensor) - findMin(tensor))
@@ -91,13 +144,13 @@ def corrImage(img1, img2):
 
 def gradientPenalty(discriminator, realImage, fakeImage, device=torch.device("cpu") ):
 
-    BATCH_SIZE, C, H, W = realImage.shape  # Channel, Hight, Width
+    B, C, H, W = realImage.shape  # Batch, Channel, Hight, Width
 
-    ### Create interpolated images (mix of real and fake with some random weight)
-    epsilon = torch.rand((BATCH_SIZE, 1, 1, 1)).repeat(1, C, H, W).to(device)
+    # Create interpolated images (mix of real and fake with some random weight)
+    epsilon = torch.rand((B, 1, 1, 1)).repeat(1, C, H, W).to(device)
     interpolatedImages = realImage * epsilon + fakeImage * (1 - epsilon)
 
-    ### Calculate critic score
+    # Calculate discriminator score
     mixedScores = discriminator(interpolatedImages)
 
     gradient = torch.autograd.grad(inputs=interpolatedImages,
@@ -106,6 +159,8 @@ def gradientPenalty(discriminator, realImage, fakeImage, device=torch.device("cp
                                    create_graph=True,
                                    retain_graph=True)[0]
 
+    # Calculate gradient penalty from gradients discriminator value of interpolated 
+    # image
     gradient = gradient.view(gradient.shape[0], -1)
     gradientNorm = gradient.norm(2, dim=1)
     gradientPenalty = torch.mean((gradientNorm-1)**2)

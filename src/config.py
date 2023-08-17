@@ -4,8 +4,7 @@ import torch
 from torch.utils.tensorboard.writer import SummaryWriter
 from torchvision.transforms import transforms as transform
 
-
-def normalise(x):
+def _normalise(x):
     if np.sum(x) == 0:
         raise Exception("Divided by zero. Attempted to normalise a zero tensor")
 
@@ -45,7 +44,7 @@ WRITER_FAKE = SummaryWriter("../runs/fake")
 
 kernal = np.zeros((NOISE_SIZE, NOISE_SIZE))
 kernal[NOISE_SIZE//2, NOISE_SIZE//2] = 1
-PSF = torch.from_numpy(normalise(gaussian(kernal, SIGMA))).type(torch.float32)
+PSF = torch.from_numpy(_normalise(gaussian(kernal, SIGMA))).type(torch.float32)
 
 transforms = transform.Compose([
     transform.Normalize(

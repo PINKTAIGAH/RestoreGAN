@@ -1,5 +1,4 @@
 from torch.utils.data import Dataset
-from scipy.ndimage import shift as shiftImage
 import torch
 import config
 import utils
@@ -197,13 +196,13 @@ class ImageGenerator(Dataset):
 
         Return
         ------
-        flowMapShift: torch.TensorFloat
+        flowMapShift: torch.FloatTensor
             Flow map corresponding to an image shift
         
-        flowMapUnshift: torch.TensorFloat
+        flowMapUnshift: torch.FloatTensor
             Flow map corresponding to the inverse of an image shift
 
-        shiftMatrix: torch.TensorFloat
+        shiftMatrix: torch.FloatTensor
             Matrix containing a 1D vector corresponding to the horizontal shift 
             of each pixel of an image.
         """
@@ -229,10 +228,10 @@ class ImageGenerator(Dataset):
 
         Parameters
         ----------
-        input: torch.TensorFloat
+        input: torch.FloatTensor
             Image to be shifted 
 
-        flowMap: torch.TensorFloat
+        flowMap: torch.FloatTensor
             Flow map to be used in the optical flow transform
 
         isBatch: bool
@@ -241,7 +240,7 @@ class ImageGenerator(Dataset):
 
         Returns
         -------
-        output: torch.TensorFloat
+        output: torch.FloatTensor
             Shifted image 
         """
 
