@@ -1,8 +1,38 @@
-import config
 import torch 
 import torch.nn as nn
 
 class LargeBlock(nn.Module):
+    """
+    A torch.nn.Module instance containing the generator of the RestoreGAN neural
+    network desined to generate flow maps to unshift an input image of size 
+    128*128. 
+
+    Atributes
+    ---------
+    firstBlock: torch.nn.Sequential instance
+        Object that will return the output of the first large kernal convolutional
+        block of the RestoreGAN network (kernal size 11)
+
+    secondBlock: torch.nn.Sequential instance
+        Object that will return the output of the second large kernal convolutional
+        block of the RestoreGAN network (kernal size 7)
+
+    Parameters
+    ----------
+    inChannel: int, optional
+        Number of colour channels of input image 
+
+    outChannel: int, optional
+        Number of image chanels of output tensor of the second convolutional block
+
+    middleChannel: int, optional
+        Number of image chanels of output tensor of the first convolutional block
+
+    Notes
+    -----
+    Architecture of this network is based on the following paper 
+    (https://doi.org/10.3390/s21144693)
+    """
     
     def __init__(self, inChannel=1, outChannel=64, middleChannel=64):
         super().__init__()
@@ -23,6 +53,20 @@ class LargeBlock(nn.Module):
         )
 
     def forward(self, x):
+        """
+        Returns output of first two large kernal convolutional locks of the 
+        RestoreGAN's generator network when called
+
+        Parameters
+        ----------
+        x: torch.FloatTensor
+            Input tensor to be passed through convolutional block
+
+        Returns
+        -------
+        output: torch.FloatTensor
+            Tensor containing output of first two convolutional blocks
+        """
         x = self.firstBlock(x)
         return self.secondBlock(x)
         

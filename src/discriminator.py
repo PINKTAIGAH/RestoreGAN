@@ -4,8 +4,7 @@ import torch.nn as nn
 class Discriminator(nn.Module):
     """
     A torch.nn.Module instance containing a Deep Convolutional GAN network designed
-    to discriminate images of size 128*128. Architecture of this network is based
-    on the folliwing paper (https://doi.org/10.48550/arXiv.1511.06434)
+    to discriminate images of size 128*128.
 
     Atribute
     --------
@@ -20,6 +19,11 @@ class Discriminator(nn.Module):
     featuresD: int
         Coefficient that will scale the number of channels created at each 
         convolutional block of the discriminator
+
+    Notes
+    -----
+    Architecture of this network is based on the folliwing paper 
+    (https://doi.org/10.48550/arXiv.1511.06434)
     """
 
     def __init__(self, channelImages, featuresD):
