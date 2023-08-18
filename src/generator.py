@@ -3,9 +3,8 @@ import torch.nn as nn
 
 class LargeBlock(nn.Module):
     """
-    A torch.nn.Module instance containing the generator of the RestoreGAN neural
-    network desined to generate flow maps to unshift an input image of size 
-    128*128. 
+    An instance of the torch.nn.Module class containing the first two convolutional 
+    blocks of the RestoreGAN's generator neural network
 
     Atributes
     ---------
@@ -72,6 +71,24 @@ class LargeBlock(nn.Module):
         
 
 class ThirdBlock(nn.Module):
+    """
+    An instance of the torch.nn.Module class constaining the third convolutional 
+    blocks of the RestoreGAN's generator neural network
+
+    Atributes
+    ---------
+    block: torch.nn.Sequential instance
+        Object that will return the output of the third convolutional block of 
+        the RestoreGAN network 
+
+    Parameters
+    ----------
+    inChannel: int, optional
+        Number of image channels of input tensor 
+
+    outChannel: int, optional
+        Number of image chanels of output tensor
+    """
 
     def __init__(self, inChannel=64, outChannel=128):
         super().__init__()
@@ -84,10 +101,44 @@ class ThirdBlock(nn.Module):
         )
 
     def forward(self, x):
+        """
+        Returns output of third convolutional bocks of the RestoreGAN's generator 
+        network when called
+
+        Parameters
+        ----------
+        x: torch.FloatTensor
+            Input tensor to be passed through convolutional block
+
+        Returns
+        -------
+        output: torch.FloatTensor
+            Tensor containing output of third convolutional blocks
+        """
         return self.block(x)
 
 class ResBlock(nn.Module):
-     
+    """
+    An instance of the torch.nn.Module class containing a ResNet residual  
+    convolutional block. Output tensor will have the same shape as the input tensor 
+
+    Atributes
+    ---------
+    resBlock: torch.nn.Sequential
+        Object that will return the output of a residual convolutional block
+
+    Parameters
+    ----------
+    inChannel: int, optional
+        Number of image channels of input tensor 
+
+    outChannel: int, optional
+        Number of image chanels of output tensor
+
+    Notes
+    -----
+    Architecture of Resnet block is described in (https://doi.org/10.48550/arXiv.1512.03385)
+    """ 
     def __init__(self, inChannel=128, outChannel=128):
         super().__init__()
 
@@ -102,17 +153,50 @@ class ResBlock(nn.Module):
         )
 
     def forward(self, x):
+        """
+        Returns output of single resNet resudual block when called
+
+        Parameters
+        ----------
+        x: torch.FloatTensor
+            Input tensor to be passed through convolutional block
+
+        Returns
+        -------
+        output: torch.FloatTensor
+            Tensor containing output of Resnet convolutional block 
+        """
+        # Identity refers to input tensor
         identity = x
         x = self.resBlock(x)
+        # Adding output of resBlock to identity to calculate residual
         x+= identity
         return x
 
 class SixthBlock(nn.Module):
+    """
+    An instance of the torch.nn.Module class containing sixth convolutional 
+    blocks of the RestoreGAN's generator neural network. Output of convolution
+    is passed through a Tanh activation function to restrain output to to range [-1, 1]
 
+    Atributes
+    ---------
+    block: torch.nn.Sequential instance
+        Object that will return the output of the third convolutional block of 
+        the RestoreGAN network 
+
+    Parameters
+    ----------
+    inChannel: int, optional
+        Number of image channels of input tensor 
+
+    outChannel: int, optional
+        Number of image chanels of output tensor
+    """
     def __init__(self, inChannel=128, outChannel=2):
         super().__init__()
 
-        self.sixthBlock = nn.Sequential(
+        self.block = nn.Sequential(
             nn.Conv2d(in_channels=inChannel, out_channels=outChannel, kernel_size=5,
                       stride=1,padding=0),
             nn.BatchNorm2d(outChannel),
@@ -120,7 +204,21 @@ class SixthBlock(nn.Module):
         )
 
     def forward(self, x):
-        return self.sixthBlock(x)
+        """
+        Returns output of sixth convolutional block of RestoreGAN's generator 
+        when called
+
+        Parameters
+        ----------
+        x: torch.FloatTensor
+            Input tensor to be passed through convolutional block
+
+        Returns
+        -------
+        output: torch.FloatTensor
+            Tensor containing output of sixth convolutional blocks
+        """
+        return self.block(x)
 
 class FullyConnected(nn.Module):
 
@@ -139,6 +237,11 @@ class FullyConnected(nn.Module):
         return self.fullyConnected(x)
 
 class Generator(nn.Module):
+    """
+    A torch.nn.Module instance containing the generator of the RestoreGAN neural
+    network desined to generate flow maps to unshift an input image of size 
+    128*128. 
+    """
     def __init__(self, imageSize, inChannel=1, outChannel=2,):
         super().__init__()
 
