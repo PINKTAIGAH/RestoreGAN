@@ -2,7 +2,6 @@ import numpy as np
 import torch
 import config
 from torchvision.utils import save_image
-import torch.nn.functional as F
 
 def save_examples(gen, val_loader, epoch, folder, filter):
     """
