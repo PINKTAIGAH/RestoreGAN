@@ -43,6 +43,7 @@ Hyper parameters
 """
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# Directory of files containing image datasets
 TRAIN_DIR = "/home/giorgio/Desktop/p06_images/train/"
 # TRAIN_DIR = "/home/brunicam/myscratch/p3_scratch/cell_dataset/train/"
 VAL_DIR = "/home/giorgio/Desktop/p06_images/val/"
@@ -50,14 +51,15 @@ VAL_DIR = "/home/giorgio/Desktop/p06_images/val/"
 BATCH_SIZE = 32
 LEARNING_RATE = 1e-4
 SCHEDULAR_DECAY = 0.5
-SCHEDULAR_PATIENCE = 20
+SCHEDULAR_STEP = 20                         # Step size of learning rate schedular
+OPTIMISER_WEIGHTS = (0.5, 0.999)            # Beta parameters of Adam optimiser
 NUM_WORKERS = 2
 MAX_JITTER = 3
 PADDING_WIDTH = 15
 IMAGE_SIZE = 128 
 NOISE_SIZE = IMAGE_SIZE - PADDING_WIDTH*2
-SIGMA = 10
-CHANNELS_IMG = 1 
+SIGMA = 10                                  # Standard deviation of gaussian kernal for PSF
+CHANNELS_IMG = 1                            # Colour channels of input image tensors 
 CHANNELS_OUT = 2
 CORRELATION_LENGTH = 10
 NUM_EPOCHS =  1000

@@ -1,5 +1,5 @@
 import torch
-from utils import save_checkpoint, load_checkpoint, save_some_examples, gradientPenalty
+from utils import save_checkpoint, load_checkpoint, save_examples, gradientPenalty
 import torch.nn as nn
 import torch.optim as optim
 import config
@@ -13,84 +13,86 @@ from tqdm import tqdm
 torch.backends.cudnn.benchmark = True
 
 
-def train_fn(
+def _trainFunction(
     disc, gen, loader, opt_disc, opt_gen, content_loss, jitter_loss, g_scaler,
     d_scaler, filter, schedular_disc, schedular_gen, 
 ):
+    # Initialise tqdm object to visualise training in command line
     loop = tqdm(loader, leave=True)
-    # step = 0
 
+    # Iterate over images in batch of data loader
     for idx, (img_jittered, img_truth, unshift_map_truth) in enumerate(loop):
+        # Send tensors from dataloader to device
         img_jittered = img_jittered.to(config.DEVICE)
         img_truth = img_truth.to(config.DEVICE)
         unshift_map_truth = unshift_map_truth.to(torch.float32).to(config.DEVICE)
 
         # Train Discriminator
         with torch.cuda.amp.autocast():
-            unshift_map_fake = gen(img_jittered)        # generated unjittered image
-            #print(vector_fake.get_device(), img_jittered.get_device())
-            
+            # Generate unshift flow map and compute unshifted image 
+            unshift_map_fake = gen(img_jittered)
             img_fake = filter.shift(img_jittered, unshift_map_fake, isBatch=True,)
             img_fake.requires_grad_()
-            #print(img_fake)
 
+            # Calculate discriminator score of true & fake image & gradient penalty 
             disc_truth = disc(img_truth).reshape(-1)
             disc_fake = disc(img_fake).reshape(-1)
             gp = gradientPenalty(disc, img_truth, img_fake, device = config.DEVICE)
 
+            # Calcuclate three losses as described in RestoreGAN paper
             loss_adverserial_disc = (
                 -(torch.mean(disc_truth) - torch.mean(disc_fake)) + 
                     config.LAMBDA_GP*gp
             )
-
             loss_content = content_loss(img_truth, img_fake)
             loss_jitter = jitter_loss(unshift_map_truth, unshift_map_fake)
 
+            # Compute overall loss function of discriminator
             loss_disc = (
                 loss_adverserial_disc + loss_content*config.LAMBDA_CONTENT + 
                 loss_jitter*config.LAMBDA_JITTER
             )
 
+        # Zero gradients of discriminator to avoid old gradients affecting backwards
+        # pass
         disc.zero_grad()
+        # Backwards pass 
+        # Retain graph us used to retain above variables after backpass for reuse 
+        # when training generator
         d_scaler.scale(loss_disc).backward(retain_graph=True)
         d_scaler.step(opt_disc)
         d_scaler.update()
 
         # Train generator
         with torch.cuda.amp.autocast():
+            # Compute loss function of generator 
             output = disc(img_fake).reshape(-1)
             loss_adverserial_gen = -torch.mean(output)
-            loss_gen = (
-                loss_adverserial_gen + loss_content*config.LAMBDA_CONTENT + 
-                loss_jitter*config.LAMBDA_JITTER
-            )
+            loss_gen = loss_adverserial_gen
 
+        # Zero gradients of discriminator to avoid old gradients affecting backwards
+        # pass
         opt_gen.zero_grad()
+        # Backwards pass
         g_scaler.scale(loss_gen).backward()
         g_scaler.step(opt_gen)
         g_scaler.update()
 
+        # Output loss function of generator and discriminator to command line
         if idx % 10 == 0:
             loop.set_postfix(
                 D_real=loss_disc.mean().item(),
                 D_fake=loss_gen.mean().item(),
             )
-
-       # with torch.no_grad():
-           # fakeSample = generator(x) 
-           # imageGridReal = torchvision.utils.make_grid(y[:32], normalize=True)
-           # imageGridFake = torchvision.utils.make_grid(fakeSample[:32], normalize=True)
-
-           # config.WRITER_REAL.add_image("real", imageGridReal, global_step=step)
-           # config.WRITER_FAKE.add_image("fake", imageGridFake, global_step=step)
-
-           # step +=1
     
-    # d_scaler.step(schedular_disc)
-    # g_scaler.step(schedular_gen)
-    return loss_disc, loss_gen 
+    # Call learning rate schedulars for both models
+    schedular_disc.step()
+    schedular_gen.step()
+    return loss_disc.mean().item(), loss_gen.mean().item() 
+
 
 def main():
+    # Define discriminator and generator objects + initialise their weights
     disc = Discriminator(config.CHANNELS_IMG, featuresD=16).to(config.DEVICE)
     gen = Generator(inChannel=config.CHANNELS_IMG, 
                     outChannel=config.CHANNELS_OUT,
@@ -98,16 +100,21 @@ def main():
     initialiseWeights(disc)
     initialiseWeights(gen)
 
+    # Define optimiser for both discriminator and generator
     opt_disc = optim.Adam(disc.parameters(), 
-                          lr=config.LEARNING_RATE, betas=(0.5, 0.999),)
+                         lr=config.LEARNING_RATE, betas=config.OPTIMISER_WEIGHTS,)
     opt_gen = optim.Adam(gen.parameters(), 
-                         lr=config.LEARNING_RATE, betas=(0.5, 0.999))
+                         lr=config.LEARNING_RATE, betas=config.OPTIMISER_WEIGHTS,)
 
+    # Define content and loss function and described in RestoreGAN paper
     LOSS_CONTENT = nn.L1Loss()
     LOSS_JITTER = nn.MSELoss()
+
+    # Initialise class to generate datasets
     filter = ImageGenerator(config.PSF, config.IMAGE_SIZE, config.CORRELATION_LENGTH,
                             config.PADDING_WIDTH, config.MAX_JITTER)
 
+    # Load previously saved models and optimisers if True
     if config.LOAD_MODEL:
         load_checkpoint(
             config.CHECKPOINT_GEN, gen, opt_gen, config.LEARNING_RATE,
@@ -116,6 +123,7 @@ def main():
             config.CHECKPOINT_DISC, disc, opt_disc, config.LEARNING_RATE,
         )
 
+    # Initialise training dataset and dataloader
     train_dataset = JitteredDataset(1024)
     train_loader = DataLoader(
         train_dataset,
@@ -123,36 +131,42 @@ def main():
         shuffle=True,
         num_workers=config.NUM_WORKERS,
     )
+    # Initialise Gradscaler to allow for automatic mixed precission during training
     g_scaler = torch.cuda.amp.GradScaler()
     d_scaler = torch.cuda.amp.GradScaler()
+
+    # Initialise validation dataset and dataloader
     val_dataset = JitteredDataset(256) 
-    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
+    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=True)
 
-    schedular_disc = optim.lr_scheduler.ReduceLROnPlateau(opt_disc, mode="min",
-                                                          factor=config.SCHEDULAR_DECAY,
-                                                          patience=config.SCHEDULAR_PATIENCE,
-                                                          verbose=True)
-    schedular_gen = optim.lr_scheduler.ReduceLROnPlateau(opt_gen, mode="min",
-                                                         factor=config.SCHEDULAR_DECAY,
-                                                         patience=config.SCHEDULAR_PATIENCE,
-                                                         verbose=True)
-
+    # Initialise learning rate schedular as describes in RestoreGAN paper
+    schedular_disc = optim.lr_scheduler.StepLR(
+        opt_disc, step_size=config.SCHEDULAR_STEP, gamma=config.SCHEDULAR_DECAY,
+        verbose=True
+    )
+    schedular_gen = optim.lr_scheduler.StepLR(
+        opt_gen, step_size=config.SCHEDULAR_STEP, gamma=config.SCHEDULAR_DECAY,
+        verbose=True
+    )
+    """
+    Training loop
+    """
+    # Iterte over epochs
     for epoch in range(config.NUM_EPOCHS):
-        D_loss, G_loss = train_fn(
+        # Train one iteration of generator and discriminator
+        D_loss, G_loss = _trainFunction(
             disc, gen, train_loader, opt_disc, opt_gen, LOSS_CONTENT, LOSS_JITTER,
             g_scaler, d_scaler, filter, schedular_disc, schedular_gen, 
         )
+        # Save images of ground truth, jittered and generated unjittered images 
+        # using models of current epoch
+        save_examples(gen, val_loader, epoch, folder="evaluation", filter=filter)
 
+        # Save models and optimisers every 5 epochs
         if config.SAVE_MODEL and epoch % 5 == 0:
             save_checkpoint(gen, opt_gen, filename=config.CHECKPOINT_GEN)
             save_checkpoint(disc, opt_disc, filename=config.CHECKPOINT_DISC)
 
-        save_some_examples(gen, val_loader, epoch, folder="evaluation", filter=filter)
-
-        # with open("raw_data/disc_loss.txt", "w") as f:
-            # f.write(f"{D_loss.mean().item():.4f}")
-        # with open("raw_data/gen_loss.txt", "w") as f:
-            # f.write(f"{G_loss.mean().item():.4f}")
 
 if __name__ == "__main__":
     main()

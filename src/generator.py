@@ -330,7 +330,7 @@ class Generator(nn.Module):
         self.down2 = ThirdBlock(inChannel=64) 
         ### out channels ==> 128
         self.down3 = ResBlock(inChannel=128)
-        ### out channel ==> 128 + 128 from  skip connection
+        ### out channel ==> 128 + 128 from skip connection
         self.down4 = ResBlock(inChannel=128)
         ### out channel ==> 128 + 128 from skip connection
         self.down5 = SixthBlock(inChannel=128, outChannel=outChannel,) 
