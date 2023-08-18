@@ -14,7 +14,7 @@ def save_examples(gen, val_loader, epoch, folder, filter):
         generate an output image)
 
     val_loader: torch.utils.Data.DataLoader instance
-        A dataloader containing dataser that will be input in the generator
+        A dataloader containing dataset that will be input in the generator
     
     epoch: int
         Epoch at which example is being taken
@@ -58,7 +58,6 @@ def save_checkpoint(model, optimiser, filename="my_checkpoint.pth.tar"):
 
     filename: string, optional
         Directory where model and optimiser will be saved
-        
     """
     print("==> Saving checkpoint")
     # Dictionary constaining model and optimiser state parameters
@@ -87,7 +86,6 @@ def load_checkpoint(checkpoint_file, model, optimiser, lr):
 
     lr: torch.TensorFloat
         Value of learning rate that is currently being used to train model
-
     """
     print("=> Loading checkpoint")
     checkpoint = torch.load(checkpoint_file, map_location=config.DEVICE)

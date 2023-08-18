@@ -158,6 +158,7 @@ def main():
             disc, gen, train_loader, opt_disc, opt_gen, LOSS_CONTENT, LOSS_JITTER,
             g_scaler, d_scaler, filter, schedular_disc, schedular_gen, 
         )
+
         # Save images of ground truth, jittered and generated unjittered images 
         # using models of current epoch
         save_examples(gen, val_loader, epoch, folder="evaluation", filter=filter)
