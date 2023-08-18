@@ -26,11 +26,6 @@ class LargeBlock(nn.Module):
 
     middleChannel: int, optional
         Number of image chanels of output tensor of the first convolutional block
-
-    Notes
-    -----
-    Architecture of this network is based on the following paper 
-    (https://doi.org/10.3390/s21144693)
     """
     
     def __init__(self, inChannel=1, outChannel=64, middleChannel=64):
@@ -221,6 +216,29 @@ class SixthBlock(nn.Module):
         return self.block(x)
 
 class FullyConnected(nn.Module):
+    """
+    An instance of the torch.nn.Module class containing the fully connected blocks
+    of the RestoreGAN's generator neural network. Output of fully connected layer
+    will have a shape of (B, H, W, 2), which is the shape of a flow map as required
+    by torch.nn.functional.grid_sample.
+
+    Atributes
+    ---------
+    block: torch.nn.Sequential instance
+        Object that will return the output of the fully connected kayer of the 
+        RestoreGAN network 
+
+    Parameters
+    ----------
+    inChannel: int
+        Number of image channels of input tensor 
+
+    inFeatures: int
+        Number of features from input tensor after flattened
+
+    outFeatures: int, optional
+        Number of output features from fully conneted layer
+    """
 
     def __init__(self,inChannel, inFeatures, outFeatures=256):
         super().__init__()
@@ -234,6 +252,19 @@ class FullyConnected(nn.Module):
         )
 
     def forward(self, x):
+        """
+        Returns output of fully connected layer of RestoreGAN's generator when called
+
+        Parameters
+        ----------
+        x: torch.FloatTensor
+            Input tensor to be passed through fully connected layer 
+
+        Returns
+        -------
+        output: torch.FloatTensor
+            Tensor containing flowmap output of RestoreGAN's generator 
+        """
         return self.fullyConnected(x)
 
 class Generator(nn.Module):
@@ -241,11 +272,55 @@ class Generator(nn.Module):
     A torch.nn.Module instance containing the generator of the RestoreGAN neural
     network desined to generate flow maps to unshift an input image of size 
     128*128. 
+
+    Atributes
+    ---------
+    fullyConnectedFeatures: int
+        Size of image form output tensor of down5 object. Calculated using a combination
+        of equation 1 (see notes) for each convolutional block the tensor pass 
+        passed through
+
+    down1: torch.nn.Sequential instance
+        Object which returns the output of the first two convolutional blocks of 
+        RestoreGAN's generator
+
+    down2: torch.nn.Sequential instance
+        Object which returns the output of the third convolutional blocks of 
+        RestoreGAN's generator
+
+    down3 & down4: torch.nn.Sequential instance
+        Object which returns the output of the Resnet convolutional blocks of 
+        RestoreGAN's generator
+
+    down5: torch.nn.Sequential instance
+        Object which returns the output of the sixth convolutional block of 
+        RestoreGAN's generator & Tanh activation function
+
+    down6: torch.nn.Sequential instance
+        Object which returns the output of the fully connected layer of the 
+        RestoreGAN generator
+
+    Parameters
+    ----------
+    imageSize: int
+        Hight and width of input image tensor
+
+    inChannel: int
+        Number of colour channels of input image
+
+    outChannels: int
+        Number of output channels of sixth convolutional block. Corresponds to 
+        number of elements in output flow map vectors
+
+    Notes
+    -----
+    Architecture of this network is based on the following paper 
+    (https://doi.org/10.3390/s21144693)
     """
     def __init__(self, imageSize, inChannel=1, outChannel=2,):
         super().__init__()
 
-        self.inputFeatures = int(imageSize/4 - 10)
+        self.fullyConnectedFeatures = int(imageSize/4 - 10)
         self.imageSize = imageSize
         self.outChannel = outChannel
         
@@ -261,12 +336,24 @@ class Generator(nn.Module):
         self.down5 = SixthBlock(inChannel=128, outChannel=outChannel,) 
         ### out channels = 2
         self.down6 = FullyConnected(inChannel=outChannel,
-                                    inFeatures=self.inputFeatures**2,
+                                    inFeatures=self.fullyConnectedFeatures**2,
                                     outFeatures=self.imageSize**2,)
         ### out shape = B * N * N * 2 (Shape of flow map for unshifting) 
     
     def forward(self, x):
+        """
+        Returns output of RestoreGAN's generator model when called
 
+        Parameters
+        ----------
+        x: torch.FloatTensor
+            Input tensor to be passed through discriminator
+
+        Returns
+        -------
+        output: torch.FloatTensor
+            Tensor containing discriminator score of the inputted image
+        """
         d1 = self.down1(x)
         # print(f"d1 shape ==> {d1.shape}")
         d2 = self.down2(d1)
@@ -286,7 +373,14 @@ class Generator(nn.Module):
         return output
 
 def initialiseWeights(model):
-    ### Setting init weights when doing one of the following operations
+    """
+    Initialise weights of generator  
+
+    Parameters
+    ----------
+    model: torch.nn.Module instance
+        Model object whose weights will be initialised 
+    """
     for m in model.modules():
         if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d, nn.BatchNorm2d)):
             nn.init.normal_(m.weight.data, 0.0, 0.02)
