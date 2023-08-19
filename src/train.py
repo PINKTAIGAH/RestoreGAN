@@ -17,6 +17,64 @@ def _trainFunction(
     disc, gen, loader, opt_disc, opt_gen, content_loss, jitter_loss, g_scaler,
     d_scaler, filter, schedular_disc, schedular_gen, 
 ):
+    """
+    Iterate though one epoch of training for the pix2pix generator and discriminator.
+
+    Parameters
+    ----------
+    disc: torch.nn.Module instance
+        Object to return the output of the PatchGAN discriminator of pix2pix.
+
+    gen: torch.nn.Module instance
+        Object to return the output of the UNET generator of pix2pix.
+
+    loader: torch.utils.Data.DataLoader instance
+        Iterable object containing the training dataset divided into batches.
+
+    opt_disc: torch.optim instance
+        Instance of the optimiser unsed to train the discriminator. The optimiser
+        currently being used is Adam.
+
+    opt_gen: torch.optim instance
+        Instance of the optimiser unsed to train the generator. The optimiser
+        currently being used is Adam.
+
+    l1_loss: torch.nn.L1Loss instance
+        Object that retuns the output of the L1 distance between input parameters.
+
+    bce: torch.nn.BCEWithLogitsLoss instance
+        Object that returns the output of the GAN adverserial loss function.
+
+    d_scaler: torch.cuda.amp.Gradscaler instance
+        Object that will scale the type size appropiatly to allow for automatic
+        mixed precision for discriminator forward and backward pass.
+
+    g_scaler: torch.cuda.amp.Gradscaler instance
+        Object that will scale the type size appropiatly to allow for automatic
+        mixed precision for generator forward and backward pass.
+
+    filter: ImageGenerator instance
+        Instance of the ImageGenerator class used to unshift jittered image using
+        the generated flowmap from the RestoreGAN generator.
+
+    schedular_disc: torch.optim.StepLR instance
+        Object that will decay the learning rate of the discriminator model every
+        10 epochs.
+
+    schedular_gen: torch.optim.StepLR instance
+        Object that will decay the learning rate of the generator model every
+        10 epochs.
+
+    Returns
+    -------
+    loss_disc: float
+        Mean value of the total loss function of the discriminator across the 
+        entire epoch.
+
+    loss_gen: float
+        Mean value of the total loss function of the generator across the entire
+        epoch.
+    """
     # Initialise tqdm object to visualise training in command line
     loop = tqdm(loader, leave=True)
 
