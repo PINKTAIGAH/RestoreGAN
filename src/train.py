@@ -145,9 +145,11 @@ def _trainFunction(
                 G_loss=loss_gen.mean().item(),
             )
     
+    ### Temporary ### 
     # Call learning rate schedulars for both models
-    schedular_disc.step()
-    schedular_gen.step()
+    # schedular_disc.step()
+    # schedular_gen.step()
+    ### Temporary ###
     return loss_disc.mean().item(), loss_gen.mean().item() 
 
 

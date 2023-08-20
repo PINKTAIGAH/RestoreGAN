@@ -53,6 +53,7 @@ LEARNING_RATE = 1e-4
 SCHEDULAR_DECAY = 0.5
 SCHEDULAR_STEP = 40                         # Step size of learning rate schedular
 OPTIMISER_WEIGHTS = (0.5, 0.999)            # Beta parameters of Adam optimiser
+CRITIC_ITERATIONS = 5
 NUM_WORKERS = 2
 MAX_JITTER = 3
 PADDING_WIDTH = 15
