@@ -121,14 +121,19 @@ def _trainFunction(
             output = disc(img_fake).reshape(-1)
             loss_adverserial_gen = -torch.mean(output)
 
-            loss_content = content_loss(img_truth, img_fake)
-            loss_jitter = jitter_loss(unshift_map_truth, unshift_map_fake)
+            ### Ignore ###
+            # loss_content = content_loss(img_truth, img_fake)
+            # loss_jitter = jitter_loss(unshift_map_truth, unshift_map_fake)
 
             # Compute overall loss function of discriminator
-            loss_gen = (
-                loss_adverserial_gen + loss_content*config.LAMBDA_CONTENT + 
-                loss_jitter*config.LAMBDA_JITTER
-            )
+            # loss_gen = (
+                # loss_adverserial_gen + loss_content*config.LAMBDA_CONTENT + 
+                # loss_jitter*config.LAMBDA_JITTER
+            # )
+            ### Ignore ###
+            loss_gen = loss_adverserial_gen
+
+
 
         # Zero gradients of discriminator to avoid old gradients affecting backwards
         # pass
