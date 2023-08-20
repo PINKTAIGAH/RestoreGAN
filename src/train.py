@@ -86,34 +86,38 @@ def _trainFunction(
         unshift_map_truth = unshift_map_truth.to(torch.float32).to(config.DEVICE)
 
         # Train Discriminator
-        with torch.cuda.amp.autocast():
-            # Generate unshift flow map and compute unshifted image 
-            unshift_map_fake = gen(img_jittered)
-            img_fake = filter.shift(img_jittered, unshift_map_fake, isBatch=True,)
-            img_fake.requires_grad_()
+        # Iterate the training of the discriminarot 5 times for every iteration
+        # of training for the generator as described in the original WGAN and 
+        # WGAN-GP paper
+        for _ in range(config.DISCRIMINATOR_ITERATIONS):
+            with torch.cuda.amp.autocast():
+                # Generate unshift flow map and compute unshifted image 
+                unshift_map_fake = gen(img_jittered)
+                img_fake = filter.shift(img_jittered, unshift_map_fake, isBatch=True,)
+                img_fake.requires_grad_()
 
-            # Calculate discriminator score of true & fake image & gradient penalty 
-            disc_truth = disc(img_truth).reshape(-1)
-            disc_fake = disc(img_fake).reshape(-1)
-            gp = gradientPenalty(disc, img_truth, img_fake, device = config.DEVICE)
+                # Calculate discriminator score of true & fake image & gradient penalty 
+                disc_truth = disc(img_truth).reshape(-1)
+                disc_fake = disc(img_fake).reshape(-1)
+                gp = gradientPenalty(disc, img_truth, img_fake, device = config.DEVICE)
 
-            # Calcuclate three losses as described in RestoreGAN paper
-            loss_adverserial_disc = (
-                -(torch.mean(disc_truth) - torch.mean(disc_fake)) + 
-                    config.LAMBDA_GP*gp
-            )
-            # Compute overall loss function of discriminator
-            loss_disc = loss_adverserial_disc 
+                # Calcuclate three losses as described in RestoreGAN paper
+                loss_adverserial_disc = (
+                    -(torch.mean(disc_truth) - torch.mean(disc_fake)) + 
+                        config.LAMBDA_GP*gp
+                )
+                # Compute overall loss function of discriminator
+                loss_disc = loss_adverserial_disc 
 
         # Zero gradients of discriminator to avoid old gradients affecting backwards
-        # pass
-        disc.zero_grad()
-        # Backwards pass 
-        # Retain graph us used to retain above variables after backpass for reuse 
-        # when training generator
-        d_scaler.scale(loss_disc).backward(retain_graph=True)
-        d_scaler.step(opt_disc)
-        d_scaler.update()
+            # pass
+            disc.zero_grad()
+            # Backwards pass 
+            # Retain graph us used to retain above variables after backpass for reuse 
+            # when training generator
+            d_scaler.scale(loss_disc).backward(retain_graph=True)
+            d_scaler.step(opt_disc)
+            d_scaler.update()
 
         # Train generator
         with torch.cuda.amp.autocast():
