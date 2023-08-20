@@ -133,8 +133,6 @@ def _trainFunction(
             ### Ignore ###
             loss_gen = loss_adverserial_gen
 
-
-
         # Zero gradients of discriminator to avoid old gradients affecting backwards
         # pass
         opt_gen.zero_grad()
@@ -146,8 +144,8 @@ def _trainFunction(
         # Output loss function of generator and discriminator to command line
         if idx % 10 == 0:
             loop.set_postfix(
-                D_real=loss_disc.mean().item(),
-                D_fake=loss_gen.mean().item(),
+                D_loss=loss_disc.mean().item(),
+                G_loss=loss_gen.mean().item(),
             )
     
     # Call learning rate schedulars for both models
