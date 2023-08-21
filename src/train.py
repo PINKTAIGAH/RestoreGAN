@@ -107,7 +107,7 @@ def _trainFunction(
                 )
                 # Compute overall loss function of discriminator
                 loss_disc = loss_adverserial_disc 
-                running_loss_disc += loss_disc.item()
+                running_loss_disc += loss_disc..mean().item()
 
             # Zero gradients of discriminator to avoid old gradients affecting backwards
             # pass
@@ -149,8 +149,7 @@ def _trainFunction(
             )
 
         # Add current loss to the running loss
-        running_loss_disc += loss_disc.item()
-        running_loss_gen += loss_gen.item()
+        running_loss_gen += loss_gen.mean().item()
     ### Temporary ### 
     # Call learning rate schedulars for both models
     # schedular_disc.step()
@@ -159,10 +158,10 @@ def _trainFunction(
 
     # Create tuple with output values
     output = (
-        loss_disc.item()/(config.BATCH_SIZE*config.DISCRIMINATOR_ITERATIONS),
-        loss_gen.item()/config.BATCH_SIZE 
+        running_loss_disc/(config.BATCH_SIZE*config.DISCRIMINATOR_ITERATIONS),
+        running_loss_gen/config.BATCH_SIZE 
     ) 
-    return loss_disc.item()/(config.BATCH_SIZE*config.DISCRIMINATOR_ITERATIONS), loss_gen.item()/config.BATCH_SIZE 
+    return output 
 
 
 def main():
@@ -228,7 +227,8 @@ def main():
     # Iterte over epochs
     for epoch in range(config.NUM_EPOCHS):
         # Train one iteration of generator and discriminator
-        D_loss, G_loss = _trainFunction(
+        # Model losses has two elements, disc loss and gen loss respectivly
+        model_losses = _trainFunction(
             disc, gen, train_loader, opt_disc, opt_gen, LOSS_CONTENT, LOSS_JITTER,
             g_scaler, d_scaler, filter, schedular_disc, schedular_gen, 
         )
@@ -238,8 +238,8 @@ def main():
             
         # Write out epoch and men loss lavue per epoch. Start new line once compleated
         utils.write_out_value(epoch, config.MODEL_LOSSES_FILE, new_line=False)    
-        utils.write_out_value(D_loss, config.MODEL_LOSSES_FILE, new_line=False)    
-        utils.write_out_value(G_loss, config.MODEL_LOSSES_FILE, new_line=True)    
+        utils.write_out_value(model_losses[0], config.MODEL_LOSSES_FILE, new_line=False)    
+        utils.write_out_value(model_losses[1], config.MODEL_LOSSES_FILE, new_line=True)    
         # Save images of ground truth, jittered and generated unjittered images 
         # using models of current epoch
         utils.save_examples(gen, val_loader, epoch, folder="evaluation", filter=filter)
