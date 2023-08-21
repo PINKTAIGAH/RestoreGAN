@@ -150,11 +150,9 @@ def _trainFunction(
 
         # Add current loss to the running loss
         running_loss_gen += loss_gen.mean().item()
-    ### Temporary ### 
     # Call learning rate schedulars for both models
-    # schedular_disc.step()
-    # schedular_gen.step()
-    ### Temporary ###
+    schedular_disc.step()
+    schedular_gen.step()
 
     # Create tuple with output values
     output = (
