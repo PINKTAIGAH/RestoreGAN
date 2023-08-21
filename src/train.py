@@ -67,13 +67,9 @@ def _trainFunction(
 
     Returns
     -------
-    loss_disc: float
-        Mean value of the total loss function of the discriminator across the 
-        entire epoch.
-
-    loss_gen: float
-        Mean value of the total loss function of the generator across the entire
-        epoch.
+    output: tuple of floats
+        Truple containing the mean generator and discriminator losses trhoughout
+        the entire epoch
     """
     # Initialise tqdm object to visualise training in command line
     loop = tqdm(loader, leave=True)
@@ -160,7 +156,13 @@ def _trainFunction(
     # schedular_disc.step()
     # schedular_gen.step()
     ### Temporary ###
-    return loss_disc/(config.BATCH_SIZE*config.DISCRIMINATOR_ITERATIONS), loss_gen/config.BATCH_SIZE 
+
+    # Create tuple with output values
+    output = (
+        loss_disc.item()/(config.BATCH_SIZE*config.DISCRIMINATOR_ITERATIONS),
+        loss_gen.item()/config.BATCH_SIZE 
+    ) 
+    return loss_disc.item()/(config.BATCH_SIZE*config.DISCRIMINATOR_ITERATIONS), loss_gen.item()/config.BATCH_SIZE 
 
 
 def main():
