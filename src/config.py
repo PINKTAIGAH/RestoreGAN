@@ -65,7 +65,7 @@ CHANNELS_OUT = 2
 CORRELATION_LENGTH = 10
 NUM_EPOCHS =  1500
 LAMBDA_CONTENT = 10
-LAMBDA_JITTER = 10
+LAMBDA_JITTER = 5 
 LAMBDA_GP = 10
 LOAD_MODEL = False 
 SAVE_MODEL = True
@@ -74,8 +74,8 @@ CHECKPOINT_GEN = "../models/gen.pth.tar"
 MODEL_LOSSES_FILE = "../raw_data/model_losses.txt"
 MODEL_LOSSES_TITLES = ["epoch", "disc_loss", "gen_loss"]
 
-WRITER_REAL = SummaryWriter("../runs/real")
-WRITER_FAKE = SummaryWriter("../runs/fake")
+# WRITER_REAL = SummaryWriter("../runs/real")
+# WRITER_FAKE = SummaryWriter("../runs/fake")
 # WRITER_REAL = SummaryWriter("/home/brunicam/myscratch/p3_scratch/runs/real")
 # WRITER_FAKE = SummaryWriter("/home/brunicam/myscratch/p3_scratch/runs/fake")
 
