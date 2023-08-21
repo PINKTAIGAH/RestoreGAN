@@ -78,9 +78,10 @@ def save_examples_concatinated(gen, val_loader, epoch, folder, filter):
         x = x * 0.5 + 0.5
         y = y * 0.5 + 0.5
         y_fake = y_fake * 0.5 + 0.5  
-
+        # Concatinate all output images in Batch axis in order to have size (3, 1, H, W)
+        output = torch.cat([x, y, y_fake], dim=0)
         # Make image grid containing all desired output images
-        image_grid = make_grid([x, y[0], y_fake[0]],)
+        image_grid = make_grid(output)
         save_image(image_grid, folder + f"/output_{epoch}.png")
 
 
