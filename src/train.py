@@ -99,7 +99,8 @@ def _trainFunction(
                 # Calculate discriminator score of true & fake image & gradient penalty 
                 disc_truth = disc(img_truth).reshape(-1)
                 disc_fake = disc(img_fake).reshape(-1)
-                gp = gradientPenalty(disc, img_truth, img_fake, device = config.DEVICE)
+                gp = utils.gradientPenalty(disc, img_truth, img_fake,
+                                           device = config.DEVICE)
 
                 # Calcuclate three losses as described in RestoreGAN paper
                 loss_adverserial_disc = (
@@ -228,9 +229,10 @@ def main():
         if epoch == 0:
             utils.write_out_titles(config.MODEL_LOSSES_TITLES, config.MODEL_LOSSES_FILE)
             
+        # Write out epoch and men loss lavue per epoch. Start new line once compleated
         utils.write_out_value(epoch, config.MODEL_LOSSES_FILE, new_line=False)    
         utils.write_out_value(D_loss, config.MODEL_LOSSES_FILE, new_line=False)    
-        utils.write_out_value(G_loss, config.MODEL_LOSSES_FILE, new_line=False)    
+        utils.write_out_value(G_loss, config.MODEL_LOSSES_FILE, new_line=True)    
         # Save images of ground truth, jittered and generated unjittered images 
         # using models of current epoch
         utils.save_examples(gen, val_loader, epoch, folder="evaluation", filter=filter)
