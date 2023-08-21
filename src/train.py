@@ -68,11 +68,12 @@ def _trainFunction(
     Returns
     -------
     output: tuple of floats
-        Truple containing the mean generator and discriminator losses trhoughout
+        Tuple containing the mean generator and discriminator losses trhoughout
         the entire epoch
     """
     # Initialise tqdm object to visualise training in command line
     loop = tqdm(loader, leave=True)
+    # Initialise running loss that will contaain cumulative sum of losses
     running_loss_disc = 0.0
     running_loss_gen = 0.0
 
@@ -107,6 +108,7 @@ def _trainFunction(
                 )
                 # Compute overall loss function of discriminator
                 loss_disc = loss_adverserial_disc 
+                # Add current loss to the running loss
                 running_loss_disc += loss_disc.mean().item()
 
             # Zero gradients of discriminator to avoid old gradients affecting backwards
@@ -242,7 +244,7 @@ def main():
         # Save images of ground truth, jittered and generated unjittered images 
         # using models of current epoch
         utils.save_examples_concatinated(gen, val_loader, epoch,
-                                         folder="evaluation", filter=filter)
+                                         folder="../evaluation", filter=filter)
 
         # Save models and optimisers every 5 epochs
         if config.SAVE_MODEL and epoch % 5 == 0:
