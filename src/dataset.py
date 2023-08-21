@@ -82,7 +82,7 @@ if __name__ == "__main__":
     N = 256
     filter = ImageGenerator(config.PSF, config.IMAGE_SIZE, config.CORRELATION_LENGTH,
                             config.PADDING_WIDTH, config.MAX_JITTER)
-    dataset = JitteredDataset(N, 2000, )
+    dataset = JitteredDataset(2000, )
     loader = DataLoader(dataset, batch_size=5)
 
     for i, images in enumerate(loader):
