@@ -1,5 +1,6 @@
 import utils
 import config
+import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 from ImageGenerator import ImageGenerator
 from torchvision.utils import save_image
@@ -90,6 +91,8 @@ if __name__ == "__main__":
         deshifted = filter.shift(x, unshiftMap, isBatch=True) 
         
         if i == 0:
-            save_image(x, "images/Jittered.png")
-            save_image(y, "images/Unjittered.png")
-            save_image(deshifted, "images/Deshifted.png")
+            fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+            ax1.imshow(y[0, 0], cmap="gray")
+            ax2.imshow(x[0, 0], cmap="gray")
+            ax3.imshow(deshifted[0, 0], cmap="gray")
+            plt.show()
