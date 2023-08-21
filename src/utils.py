@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import config
-from torchvision.utils import save_image
+from torchvision.utils import save_image, make_grid
 
 def save_examples(gen, val_loader, epoch, folder, filter):
     """
@@ -41,6 +41,47 @@ def save_examples(gen, val_loader, epoch, folder, filter):
         save_image(y * 0.5 + 0.5, folder + f"/label_{epoch}.png")
         save_image(y_fake, folder + f"/y_gen_{epoch}.png")
     gen.train()
+
+def save_examples_concatinated(gen, val_loader, epoch, folder, filter):
+    """
+    Save examples of output from generator as png images at a specified folder
+    As opposed to saving images seperatly, images will be concatinated and outputted
+    as a single image to increase ease to visually compare outputs from GAN
+
+    Parameters
+    ----------
+    gen: torch.nn.Module instance
+        A generator neural network that will output image (or data required to 
+        generate an output image)
+
+    val_loader: torch.utils.Data.DataLoader instance
+        A dataloader containing dataset that will be input in the generator
+    
+    epoch: int
+        Epoch at which example is being taken
+
+    folder: string
+        Directory where output image will be saved
+
+    filter: torch.utils.Data.Dataset instance
+        Class constining method required to unshift image using generator's 
+        outputted flowmap
+    """
+    x, y, _ = next(iter(val_loader))
+    x, y = x.to(config.DEVICE), y.to(config.DEVICE)
+    gen.eval()
+    with torch.no_grad():
+        # Generate flow map with generator and use it to unshift jittered image
+        unshift_map_fake  = gen(x)
+        y_fake = filter.shift(x, unshift_map_fake, isBatch=True)
+        # Remove normalisation
+        x = x * 0.5 + 0.5
+        y = y * 0.5 + 0.5
+        y_fake = y_fake * 0.5 + 0.5  
+
+        # Make image grid containing all desired output images
+        image_grid = make_grid([x, y, y_fake],)
+        save_image(image_grid, folder + f"/output_{epoch}.png")
 
 
 def save_checkpoint(model, optimiser, filename="my_checkpoint.pth.tar"):

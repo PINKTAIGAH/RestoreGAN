@@ -240,9 +240,11 @@ def main():
         utils.write_out_value(epoch, config.MODEL_LOSSES_FILE, new_line=False)    
         utils.write_out_value(model_losses[0], config.MODEL_LOSSES_FILE, new_line=False)    
         utils.write_out_value(model_losses[1], config.MODEL_LOSSES_FILE, new_line=True)    
+
         # Save images of ground truth, jittered and generated unjittered images 
         # using models of current epoch
-        utils.save_examples(gen, val_loader, epoch, folder="evaluation", filter=filter)
+        utils.save_examples_concatinated(gen, val_loader, epoch,
+                                         folder="evaluation", filter=filter)
 
         # Save models and optimisers every 5 epochs
         if config.SAVE_MODEL and epoch % 5 == 0:
