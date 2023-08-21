@@ -248,3 +248,60 @@ def gradientPenalty(discriminator, realImage, fakeImage, device=torch.device("cp
     gradientPenalty = torch.mean((gradientNorm-1)**2)
     
     return gradientPenalty
+
+def write_out_value(val, filename, new_line=False):
+    """
+    Write out value to specified file. If new_line parameter is True, function
+    will write out a new line character after having written out the val parameter
+
+    Parameters
+    ----------
+    val: float or string
+        Value to bve written into file
+
+    filename: string
+        Directory of file where val will be written into
+
+    new_line: bool, optional
+        If True, function will write out a new line character after having written
+        out the specified val parameter
+    """
+    f = open(filename, "a+")
+    f.write(' ' + str(val) + ',')
+    # Add new line character to file if specified
+    if new_line:
+        f.write('\n')
+    f.close()
+    return
+
+def write_out_titles(titles, filename,):
+    """
+    Write out strings in a list to a file and once finished add a new line character.
+    Designed to write titles of a data file at the start of a file.
+
+    Parameters
+    ----------
+    titles: list of strings 
+        List containing titles to be wrtten into file
+
+    filename: string
+        Directory of file where val will be written into
+    """
+    # Iterate over titles in list
+    for idx, title in enumerate(titles):
+        # Do not add new line if not final element in list
+        if not len(titles)-1 == idx:
+            write_out_value(title, filename, new_line=False)
+        # Add new line if final element in list
+        else:
+            write_out_value(title, filename, new_line=True)
+
+def test():
+    titles = ["gen_loss", "disc_loss", "random_string"]
+    write_out_titles(titles, "../raw_data/test.txt")
+    write_out_value(4.653, "../raw_data/test.txt", new_line=False)
+    write_out_value(5.7657, "../raw_data/test.txt", new_line=False)
+    write_out_value("hello", "../raw_data/test.txt", new_line=True)
+
+if __name__ == "__main__":
+    test()

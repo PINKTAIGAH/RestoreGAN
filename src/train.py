@@ -1,5 +1,5 @@
 import torch
-from utils import save_checkpoint, load_checkpoint, save_examples, gradientPenalty
+import utils
 import torch.nn as nn
 import torch.optim as optim
 import config
@@ -182,10 +182,10 @@ def main():
 
     # Load previously saved models and optimisers if True
     if config.LOAD_MODEL:
-        load_checkpoint(
+        utils.load_checkpoint(
             config.CHECKPOINT_GEN, gen, opt_gen, config.LEARNING_RATE,
         )
-        load_checkpoint(
+        utils.load_checkpoint(
             config.CHECKPOINT_DISC, disc, opt_disc, config.LEARNING_RATE,
         )
 
@@ -225,14 +225,20 @@ def main():
             g_scaler, d_scaler, filter, schedular_disc, schedular_gen, 
         )
 
+        if epoch == 0:
+            utils.write_out_titles(config.MODEL_LOSSES_TITLES, config.MODEL_LOSSES_FILE)
+            
+        utils.write_out_value(epoch, config.MODEL_LOSSES_FILE, new_line=False)    
+        utils.write_out_value(D_loss, config.MODEL_LOSSES_FILE, new_line=False)    
+        utils.write_out_value(G_loss, config.MODEL_LOSSES_FILE, new_line=False)    
         # Save images of ground truth, jittered and generated unjittered images 
         # using models of current epoch
-        save_examples(gen, val_loader, epoch, folder="evaluation", filter=filter)
+        utils.save_examples(gen, val_loader, epoch, folder="evaluation", filter=filter)
 
         # Save models and optimisers every 5 epochs
         if config.SAVE_MODEL and epoch % 5 == 0:
-            save_checkpoint(gen, opt_gen, filename=config.CHECKPOINT_GEN)
-            save_checkpoint(disc, opt_disc, filename=config.CHECKPOINT_DISC)
+            utils.save_checkpoint(gen, opt_gen, filename=config.CHECKPOINT_GEN)
+            utils.save_checkpoint(disc, opt_disc, filename=config.CHECKPOINT_DISC)
 
 
 if __name__ == "__main__":

@@ -71,6 +71,8 @@ LOAD_MODEL = False
 SAVE_MODEL = True
 CHECKPOINT_DISC = "../models/disc.pth.tar"
 CHECKPOINT_GEN = "../models/gen.pth.tar"
+MODEL_LOSSES_FILE = "../raw_data/model_losses.txt"
+MODEL_LOSSES_TITLES = ["epoch", "disc_loss", "gen_loss"]
 
 WRITER_REAL = SummaryWriter("../runs/real")
 WRITER_FAKE = SummaryWriter("../runs/fake")

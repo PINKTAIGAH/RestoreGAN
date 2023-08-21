@@ -1,0 +1,2 @@
+ gen_loss, disc_loss, random_string,
+ 4.653, 5.7657, hello,
