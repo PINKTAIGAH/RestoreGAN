@@ -77,6 +77,8 @@ def _trainFunction(
     """
     # Initialise tqdm object to visualise training in command line
     loop = tqdm(loader, leave=True)
+    running_loss_disc = 0.0
+    running_loss_gen = 0.0
 
     # Iterate over images in batch of data loader
     for idx, (img_jittered, img_truth, unshift_map_truth) in enumerate(loop):
@@ -109,6 +111,7 @@ def _trainFunction(
                 )
                 # Compute overall loss function of discriminator
                 loss_disc = loss_adverserial_disc 
+                running_loss_disc += loss_disc.item()
 
             # Zero gradients of discriminator to avoid old gradients affecting backwards
             # pass
@@ -134,7 +137,6 @@ def _trainFunction(
                 loss_adverserial_gen + loss_content*config.LAMBDA_CONTENT + 
                 loss_jitter*config.LAMBDA_JITTER
             )
-
         # Zero gradients of discriminator to avoid old gradients affecting backwards
         # pass
         opt_gen.zero_grad()
@@ -149,13 +151,16 @@ def _trainFunction(
                 D_loss=loss_disc.mean().item(),
                 G_loss=loss_gen.mean().item(),
             )
-        print(idx) 
+
+        # Add current loss to the running loss
+        running_loss_disc += loss_disc.item()
+        running_loss_gen += loss_gen.item()
     ### Temporary ### 
     # Call learning rate schedulars for both models
     # schedular_disc.step()
     # schedular_gen.step()
     ### Temporary ###
-    return loss_disc.mean().item(), loss_gen.mean().item() 
+    return loss_disc/(config.BATCH_SIZE*config.DISCRIMINATOR_ITERATIONS), loss_gen/config.BATCH_SIZE 
 
 
 def main():
