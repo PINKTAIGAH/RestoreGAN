@@ -107,7 +107,7 @@ def _trainFunction(
                 )
                 # Compute overall loss function of discriminator
                 loss_disc = loss_adverserial_disc 
-                running_loss_disc += loss_disc..mean().item()
+                running_loss_disc += loss_disc.mean().item()
 
             # Zero gradients of discriminator to avoid old gradients affecting backwards
             # pass
