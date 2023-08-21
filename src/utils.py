@@ -80,7 +80,7 @@ def save_examples_concatinated(gen, val_loader, epoch, folder, filter):
         y_fake = y_fake * 0.5 + 0.5  
 
         # Make image grid containing all desired output images
-        image_grid = make_grid([x, y, y_fake],)
+        image_grid = make_grid([x, y[0], y_fake[0]],)
         save_image(image_grid, folder + f"/output_{epoch}.png")
 
 
