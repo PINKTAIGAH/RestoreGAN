@@ -109,7 +109,7 @@ def _trainFunction(
                 # Compute overall loss function of discriminator
                 loss_disc = loss_adverserial_disc 
 
-        # Zero gradients of discriminator to avoid old gradients affecting backwards
+            # Zero gradients of discriminator to avoid old gradients affecting backwards
             # pass
             disc.zero_grad()
             # Backwards pass 
