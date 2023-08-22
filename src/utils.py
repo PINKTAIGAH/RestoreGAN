@@ -245,7 +245,8 @@ def adjustArray(array):
     """
     return (array) / (array.max() - array.min())
 
-def gradientPenalty(discriminator, realImage, fakeImage, device=torch.device("cpu")):
+def gradientPenalty(discriminator, realImage, fakeImage, jitteredImage, 
+                    device=torch.device("cpu")):
     """
     Compute gradient penalty to be appled to Wasserstein-GAN's adverserial loss
     in order to apply Lipchitz constraint
@@ -273,12 +274,12 @@ def gradientPenalty(discriminator, realImage, fakeImage, device=torch.device("cp
 
     # Create interpolated images (mix of real and fake with some random weight)
     epsilon = torch.rand((B, 1, 1, 1)).repeat(1, C, H, W).to(device)
-    interpolatedImages = realImage * epsilon + fakeImage * (1 - epsilon)
+    interpolatedImage = realImage * epsilon + fakeImage * (1 - epsilon)
 
     # Calculate discriminator score
-    mixedScores = discriminator(interpolatedImages)
+    mixedScores = discriminator(jitteredImage, interpolatedImage)
 
-    gradient = torch.autograd.grad(inputs=interpolatedImages,
+    gradient = torch.autograd.grad(inputs=interpolatedImage,
                                    outputs=mixedScores,
                                    grad_outputs=torch.ones_like(mixedScores),
                                    create_graph=True,

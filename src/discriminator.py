@@ -29,8 +29,8 @@ class Discriminator(nn.Module):
     def __init__(self, channelImages, featuresD):
         super(Discriminator, self).__init__()
         self.critic = nn.Sequential(
-            ### INPUT SIZE: N * channelImages * 128 * 128 
-            nn.Conv2d(channelImages, featuresD, kernel_size=4,
+            ### INPUT SIZE: N * (channelImages * 2) * 128 * 128
+            nn.Conv2d(channelImages*2, featuresD, kernel_size=4,
                       stride=2, padding= 1),
             ### SIZE: 64*64
             nn.LeakyReLU(0.2),
@@ -88,21 +88,26 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(0.2),
         )
 
-    def forward(self, x):
+    def forward(self, x, y):
         """
         Returns output of DCGAN discriminator model when called
 
         Parameters
         ----------
         x: torch.FloatTensor
-            Input tensor to be passed through discriminator
+            Generated input tensor to be passed through discriminator
+
+        y: torch.FloatTensor
+            Ground truth generated input tensor to be passed through discriminator
 
         Returns
         -------
         output: torch.FloatTensor
             Tensor containing discriminator score of the inputted image
         """
-        return self.critic(x)
+        # Concatinate ground truth and generated inputs
+        input = torch.cat([x, y], dim=1)
+        return self.critic(input)
 
 def initialiseWeights(model):
     """
@@ -120,10 +125,11 @@ def initialiseWeights(model):
 def test():
     N = 128
     x = torch.randn((5, 1, N, N))
+    y = torch.randn((5, 1, N, N))
     disc = Discriminator(1, 32)
     initialiseWeights(disc)
-    y = disc(x)
-    print(y.shape)
+    pred = disc(x, y)
+    print(pred.shape)
 
 
 if __name__ == "__main__":

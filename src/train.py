@@ -96,9 +96,9 @@ def _trainFunction(
                 img_fake.requires_grad_()
 
                 # Calculate discriminator score of true & fake image & gradient penalty 
-                disc_truth = disc(img_truth).reshape(-1)
-                disc_fake = disc(img_fake).reshape(-1)
-                gp = utils.gradientPenalty(disc, img_truth, img_fake,
+                disc_truth = disc(img_jittered, img_truth).reshape(-1)
+                disc_fake = disc(img_jittered, img_fake).reshape(-1)
+                gp = utils.gradientPenalty(disc, img_truth, img_fake, img_jittered,
                                            device = config.DEVICE)
 
                 # Calcuclate three losses as described in RestoreGAN paper
@@ -124,7 +124,7 @@ def _trainFunction(
         # Train generator
         with torch.cuda.amp.autocast():
             # Compute loss function of generator 
-            output = disc(img_fake).reshape(-1)
+            output = disc(img_jittered, img_fake).reshape(-1)
             loss_adverserial_gen = -torch.mean(output)
 
             loss_content = content_loss(img_truth, img_fake)
