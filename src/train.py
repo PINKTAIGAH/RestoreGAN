@@ -156,8 +156,10 @@ def _trainFunction(
         with torch.no_grad():
             running_loss_gen += loss_gen.mean().item()
     # Call learning rate schedulars for both models
-    schedular_disc.step()
-    schedular_gen.step()
+    ### Temporary ###
+    # schedular_disc.step()
+    # schedular_gen.step()
+    ### Temporary ###
 
     # Create tuple with output values
     with torch.no_grad():
