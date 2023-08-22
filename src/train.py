@@ -109,7 +109,8 @@ def _trainFunction(
                 # Compute overall loss function of discriminator
                 loss_disc = loss_adverserial_disc 
                 # Add current loss to the running loss
-                running_loss_disc += loss_disc.mean().item()
+                with torch.no_grad():
+                    running_loss_disc += loss_disc.mean().item()
 
             # Zero gradients of discriminator to avoid old gradients affecting backwards
             # pass
@@ -152,16 +153,18 @@ def _trainFunction(
             )
 
         # Add current loss to the running loss
-        running_loss_gen += loss_gen.mean().item()
+        with torch.no_grad():
+            running_loss_gen += loss_gen.mean().item()
     # Call learning rate schedulars for both models
     schedular_disc.step()
     schedular_gen.step()
 
     # Create tuple with output values
-    output = (
-        running_loss_disc/(config.BATCH_SIZE*config.DISCRIMINATOR_ITERATIONS),
-        running_loss_gen/config.BATCH_SIZE 
-    ) 
+    with torch.no_grad():
+        output = (
+            running_loss_disc/(config.BATCH_SIZE*config.DISCRIMINATOR_ITERATIONS),
+            running_loss_gen/config.BATCH_SIZE 
+        ) 
     return output 
 
 
