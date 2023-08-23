@@ -57,7 +57,8 @@ with torch.no_grad():
             # Send x, y, and generated y to device
             x = x.to(config.DEVICE)
             y = y.to(config.DEVICE)
-            y_fake = gen(x).to(config.DEVICE)
+            unshift_map_fake  = gen(x)
+            y_fake = filter.shift(x, unshift_map_fake, isBatch=True)
             # Append value of L1 distance to list
             l1_list.append(L1(y, y_fake).item() * 100)
  
