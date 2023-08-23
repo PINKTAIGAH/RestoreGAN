@@ -48,7 +48,7 @@ EVALUATION_IMAGE_FILE = "../evaluation/metric"
 
 # Evaluation hyperparameters
 EVALUATION_EPOCHS = 50
-EVALUATION_METRIC_FILE = "../raw_data/sigma.txt"
+EVALUATION_METRIC_FILE = "../raw_data/lambda.txt"
 
 # WRITER_REAL = SummaryWriter("../runs/real")
 # WRITER_FAKE = SummaryWriter("../runs/fake")
