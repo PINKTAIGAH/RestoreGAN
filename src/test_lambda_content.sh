@@ -5,6 +5,6 @@ for i in ${lambda_content_array[@]}; do
     echo "LAMBDA_CONTENT = $i" >> config.py
     echo "EVALUATION_IMAGE_FILE= '../evaluation/content_$i'" >> config.py
     mkdir ../evaluation/content_$i
-    # python3 train.py 
-    # python3 evaluation.py
+    python3 train.py 
+    python3 evaluation.py
 done
