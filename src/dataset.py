@@ -26,9 +26,8 @@ class JitteredDataset(Dataset):
     """
     def __init__(self, length=1):
         self.length = length
-        self.filter = ImageGenerator(config.PSF, config.IMAGE_SIZE,
-                            config.CORRELATION_LENGTH, config.PADDING_WIDTH,
-                                     config.MAX_JITTER)
+        self.filter = ImageGenerator(config.IMAGE_SIZE, config.CORRELATION_LENGTH,
+                                     config.PADDING_WIDTH, config.MAX_JITTER)
     def __len__(self):
         return self.length
 
@@ -81,7 +80,7 @@ class JitteredDataset(Dataset):
 if __name__ == "__main__":
 
     N = 256
-    filter = ImageGenerator(config.PSF, config.IMAGE_SIZE, config.CORRELATION_LENGTH,
+    filter = ImageGenerator(config.IMAGE_SIZE, config.CORRELATION_LENGTH,
                             config.PADDING_WIDTH, config.MAX_JITTER)
     dataset = JitteredDataset(2000, )
     loader = DataLoader(dataset, batch_size=5)

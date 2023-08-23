@@ -190,16 +190,16 @@ def main():
     LOSS_JITTER = nn.MSELoss()
 
     # Initialise class to generate datasets
-    filter = ImageGenerator(config.PSF, config.IMAGE_SIZE, config.CORRELATION_LENGTH,
+    filter = ImageGenerator(config.IMAGE_SIZE, config.CORRELATION_LENGTH,
                             config.PADDING_WIDTH, config.MAX_JITTER)
 
     # Load previously saved models and optimisers if True
     if config.LOAD_MODEL:
         utils.load_checkpoint(
-            config.CHECKPOINT_GEN, gen, opt_gen, config.LEARNING_RATE,
+            config.CHECKPOINT_GEN_LOAD, gen, opt_gen, config.LEARNING_RATE,
         )
         utils.load_checkpoint(
-            config.CHECKPOINT_DISC, disc, opt_disc, config.LEARNING_RATE,
+            config.CHECKPOINT_DISC_LOAD, disc, opt_disc, config.LEARNING_RATE,
         )
 
     # Initialise training dataset and dataloader
@@ -250,12 +250,12 @@ def main():
         # Save images of ground truth, jittered and generated unjittered images 
         # using models of current epoch
         utils.save_examples_concatinated(gen, val_loader, epoch,
-                                         folder="../evaluation", filter=filter)
+                                         folder=config.TRAIN_IMAGE_FILE, filter=filter)
 
         # Save models and optimisers every 5 epochs
         if config.SAVE_MODEL and epoch % 5 == 0:
-            utils.save_checkpoint(gen, opt_gen, filename=config.CHECKPOINT_GEN)
-            utils.save_checkpoint(disc, opt_disc, filename=config.CHECKPOINT_DISC)
+            utils.save_checkpoint(gen, opt_gen, filename=config.CHECKPOINT_GEN_SAVE)
+            utils.save_checkpoint(disc, opt_disc, filename=config.CHECKPOINT_DISC_SAVE)
 
 
 if __name__ == "__main__":

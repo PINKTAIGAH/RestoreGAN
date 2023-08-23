@@ -4,6 +4,7 @@ import config
 import utils
 import numpy as np
 from time import time
+from skimage.filters import gaussian
 import matplotlib.pyplot as plt
 from torchvision.transforms import Pad
 import torch.nn.functional as F
@@ -15,10 +16,6 @@ class ImageGenerator(Dataset):
 
     Parameters
     ----------
-    psf: torch.FloatTensor
-        A 2D point spread function with equal hight and width dimention as the 
-        imageHight parameter
-
     imageHight: int
         Hight of image. (Currently class assumes square images, hence imageHight
         also represents width of image)
@@ -36,6 +33,10 @@ class ImageGenerator(Dataset):
 
     Atributes
     ---------
+    psf: torch.FloatTensor
+        A 2D point spread function with equal hight and width dimention as the 
+        imageHight parameter
+        
     ftPsf: torch.ConplexFloatTensor
         The fourier transform of the psf parameter
 
@@ -47,9 +48,9 @@ class ImageGenerator(Dataset):
         pixel in the flow map vector space. Tensor shape is (H, W, 2) 
     """
 
-    def __init__(self, psf, imageHeight, correlationLength, paddingWidth, maxJitter):
+    def __init__(self, imageHeight, correlationLength, paddingWidth, maxJitter):
         
-        self.psf = psf
+        self.psf = self._generatePSF()
         self.ftPsf = torch.fft.fft2(self.psf)
         self.imageHight = imageHeight
         self.correlationLength = correlationLength
@@ -61,6 +62,43 @@ class ImageGenerator(Dataset):
         self.identityFlowMap = torch.squeeze(F.affine_grid(identifyMatrix,
                                              [1, 1, self.imageHight,
                                               self.imageHight]), 0) 
+
+    def _normalise(self, x):
+        """
+        Normalise a ndArray
+
+        Parameters
+        ----------
+        x: ndArray
+            Input array containing dataset to be normalised
+
+        Returns
+        -------
+        output: ndArray
+            Normalised array
+        """
+
+        if np.sum(x) == 0:
+            raise Exception("Divided by zero. Attempted to normalise a zero tensor")
+
+        return x/np.sum(x**2)
+    
+    def _generatePSF(self):
+        """
+        Generate a image tensor of a point spread function with size of defined 
+        in config file (excluding padding)
+    
+        Returns
+        -------
+        pointFunction: FloatTensor 
+            2D image tensor containing a point spreaffunction
+        """
+
+        # Generate a point spread finction by applying a gaussian blur to a point function
+        pointFunction = np.zeros((config.NOISE_SIZE, config.NOISE_SIZE))
+        pointFunction[config.NOISE_SIZE//2, config.NOISE_SIZE//2] = 1
+        psf = self._normalise(gaussian(pointFunction, config.SIGMA))
+        return torch.from_numpy(psf).type(torch.float32) 
 
     def _generateEnvelopeCenters(self):
         """
@@ -262,7 +300,7 @@ class ImageGenerator(Dataset):
 
 def test():
 
-    filter = ImageGenerator(config.PSF, config.IMAGE_SIZE, config.CORRELATION_LENGTH,
+    filter = ImageGenerator(config.IMAGE_SIZE, config.CORRELATION_LENGTH, 
                             config.PADDING_WIDTH, config.MAX_JITTER)
 
     t1 = time()

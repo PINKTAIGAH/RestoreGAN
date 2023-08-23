@@ -1,42 +1,7 @@
 from skimage.filters import gaussian
-import numpy as np
 import torch
 from torch.utils.tensorboard.writer import SummaryWriter
 from torchvision.transforms import transforms as transform
-
-def _normalise(x):
-    """
-    Normalise a ndArray
-
-    Parameters
-    ----------
-    x: ndArray
-        Input array containing dataset to be normalised
-
-    Returns
-    -------
-    output: ndArray
-        Normalised array
-    """
-    if np.sum(x) == 0:
-        raise Exception("Divided by zero. Attempted to normalise a zero tensor")
-
-    return x/np.sum(x**2)
-
-def _generatePointFunction():
-    """
-    Generate a image array of a point function with size of defined in config 
-    file (excluding padding)
-    
-    Returns
-    -------
-    pointFunction: ndArray
-        2D image array containing a point function
-    """
-
-    pointFunction = np.zeros((NOISE_SIZE, NOISE_SIZE))
-    pointFunction[NOISE_SIZE//2, NOISE_SIZE//2] = 1
-    return pointFunction
 
 """
 Hyper parameters
@@ -63,25 +28,32 @@ SIGMA = 10                                  # Standard deviation of gaussian ker
 CHANNELS_IMG = 1                            # Colour channels of input image tensors 
 CHANNELS_OUT = 2
 CORRELATION_LENGTH = 10
-NUM_EPOCHS =  1500
+NUM_EPOCHS =  500
 LAMBDA_CONTENT = 100
 LAMBDA_JITTER =  100
 LAMBDA_GP = 10
 LOAD_MODEL = True
 SAVE_MODEL = True
-CHECKPOINT_DISC = "../models/disc.pth.tar"
-CHECKPOINT_GEN = "../models/gen.pth.tar"
+
+CHECKPOINT_DISC_LOAD = "../models/disc.pth.tar"
+CHECKPOINT_GEN_LOAD = "../models/gen.pth.tar"
+
+CHECKPOINT_DISC_SAVE = "../models/disc.pth.tar"
+CHECKPOINT_GEN_SAVE = "../models/gen.pth.tar"
+
 MODEL_LOSSES_FILE = "../raw_data/model_losses.txt"
 MODEL_LOSSES_TITLES = ["epoch", "disc_loss", "gen_loss"]
+TRAIN_IMAGE_FILE= "../evaluation/default"
+EVALUATION_IMAGE_FILE = "../evaluation/metric"
+
+# Evaluation hyperparameters
+EVALUATION_EPOCHS = 50
+EVALUATION_METRIC_FILE = "../raw_data/sigma.txt"
 
 # WRITER_REAL = SummaryWriter("../runs/real")
 # WRITER_FAKE = SummaryWriter("../runs/fake")
 # WRITER_REAL = SummaryWriter("/home/brunicam/myscratch/p3_scratch/runs/real")
 # WRITER_FAKE = SummaryWriter("/home/brunicam/myscratch/p3_scratch/runs/fake")
-
-# Generate a point spread finction by applying a gaussian blur to a point function
-pointFunction = _generatePointFunction()
-PSF = torch.from_numpy(_normalise(gaussian(pointFunction, SIGMA))).type(torch.float32)
 
 """
 Tensor transforms
@@ -99,3 +71,7 @@ transformsFile = transform.Compose([
     transform.RandomCrop(IMAGE_SIZE),
     transform.Grayscale(),
 ])
+
+"""
+Hyperparameter overwriting for automatic bash scripts 
+"""
