@@ -65,8 +65,7 @@ with torch.no_grad():
             ], -1).to(config.DEVICE)
             identity_flow_map = torch.clone(filter.identityFlowMap).to(config.DEVICE)
             # Apply gennerated coefficients to identity flow map to generate unshift map
-            unshift_map_fake = identity_flow_map + unshift_coefficients
-            unshift_map_fake = identity_flow_map + unshift_coefficients
+            unshift_map_fake = identity_flow_map - unshift_coefficients
             y_fake = filter.shift(x, unshift_map_fake, isBatch=True)
             # Append value of L1 distance to list
             l1_list.append(L1(y, y_fake).item() * 100)
