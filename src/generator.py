@@ -195,7 +195,7 @@ class SixthBlock(nn.Module):
             nn.Conv2d(in_channels=inChannel, out_channels=outChannel, kernel_size=5,
                       stride=1,padding=0),
             nn.BatchNorm2d(outChannel),
-            nn.Tanh(),          # CHANGE TO EXPANDED TANH
+            nn.Tanh(),          
         )
 
     def forward(self, x):
