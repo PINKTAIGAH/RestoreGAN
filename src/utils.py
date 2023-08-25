@@ -85,7 +85,7 @@ def save_examples_concatinated(gen, val_loader, epoch, folder, filter):
         ], -1).to(config.DEVICE)
         identity_flow_map = torch.clone(filter.identityFlowMap).to(config.DEVICE)
         # Apply gennerated coefficients to identity flow map to generate unshift map
-        unshift_map_fake = identity_flow_map[:, :, :, 0] + unshift_coefficients
+        unshift_map_fake = identity_flow_map + unshift_coefficients
         y_fake = filter.shift(x, unshift_map_fake, isBatch=True)
         # Remove normalisation
         x = x * 0.5 + 0.5
