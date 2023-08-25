@@ -63,6 +63,8 @@ class ImageGenerator(Dataset):
                                              [1, 1, self.imageHight,
                                               self.imageHight]), 0) 
 
+        self.batchIdentityFlowMap = torch.unsqueeze(self.identityFlowMap, 0).repeat(config.BATCH_SIZE, 1, 1, 1)
+
     def _normalise(self, x):
         """
         Normalise a ndArray

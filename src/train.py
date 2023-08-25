@@ -93,11 +93,10 @@ def _trainFunction(
                 # Generate coefficients to unshift horizontal axis
                 unshift_coefficients = gen(img_jittered).to(config.DEVICE)
                 # Concatinate unshift coefficients with zeros in y dimention
-                unshift_coefficients = torch.cat([
-                    unshift_coefficients, torch.zeros_like(unshift_coefficients) 
-                ], -1).to(config.DEVICE)
-                identity_flow_map = torch.clone(filter.identityFlowMap).requires_grad_().to(config.DEVICE)
+                identity_flow_map = torch.clone(filter.batchIdentityFlowMap).to(config.DEVICE)
+                print(unshift_coefficients.shape, identity_flow_map[:, :, :, 0].shape)
                 # Apply gennerated coefficients to identity flow map to generate unshift map
+
                 unshift_map_fake = identity_flow_map + unshift_coefficients
                 # Apply unshift flow map to jittered image
                 img_fake = filter.shift(img_jittered, unshift_map_fake, isBatch=True,)
