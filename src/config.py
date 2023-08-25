@@ -33,7 +33,7 @@ LAMBDA_CONTENT = 200
 LAMBDA_JITTER =  100
 LAMBDA_GP = 10
 LOAD_MODEL = False
-SAVE_MODEL = False
+SAVE_MODEL = True
 
 CHECKPOINT_DISC_LOAD = "../models/disc.pth.tar"
 CHECKPOINT_GEN_LOAD = "../models/gen.pth.tar"
