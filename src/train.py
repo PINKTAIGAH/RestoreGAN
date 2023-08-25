@@ -92,6 +92,7 @@ def _trainFunction(
             with torch.cuda.amp.autocast():
                 # Generate coefficients to unshift horizontal axis
                 unshift_coefficients = gen(img_jittered).to(config.DEVICE)
+                print(unshift_coefficients)
                 # Concatinate unshift coefficients with zeros in y dimention
                 unshift_coefficients = torch.cat([
                     unshift_coefficients, torch.zeros_like(unshift_coefficients) 

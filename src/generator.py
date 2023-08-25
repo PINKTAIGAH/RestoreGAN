@@ -245,10 +245,15 @@ class FullyConnected(nn.Module):
 
         self.fullyConnected = nn.Sequential(
             nn.Flatten(start_dim=1),
-            
             nn.Linear(in_features=inChannel*inFeatures,
+                      out_features=inChannel*inFeatures*4),
+            nn.LeakyReLU(0.2),
+            nn.Linear(in_features=inChannel*inFeatures*4,
+                      out_features=inChannel*inFeatures*4*4),
+            nn.LeakyReLU(0.2),
+            nn.Linear(in_features=inChannel*inFeatures*4*4,
                       out_features=outFeatures),
-            nn.ReLU(),
+            nn.LeakyReLU(0.2),
         )
 
     def forward(self, x):
