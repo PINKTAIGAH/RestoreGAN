@@ -91,12 +91,12 @@ def _trainFunction(
         for _ in range(config.DISCRIMINATOR_ITERATIONS):
             with torch.cuda.amp.autocast():
                 # Generate coefficients to unshift horizontal axis
-                unshift_coefficients = gen(img_jittered)
+                unshift_coefficients = gen(img_jittered).to(config.DEVICE)
                 # Concatinate unshift coefficients with zeros in y dimention
                 unshift_coefficients = torch.cat([
                     unshift_coefficients, torch.zeros_like(unshift_coefficients) 
-                ], -1)
-                identity_flow_map = torch.clone(filter.identityFlowMap).requires_grad_()
+                ], -1).to(config.DEVICE)
+                identity_flow_map = torch.clone(filter.identityFlowMap).requires_grad_().to(config.DEVICE)
                 # Apply gennerated coefficients to identity flow map to generate unshift map
                 unshift_map_fake = identity_flow_map + unshift_coefficients
                 # Apply unshift flow map to jittered image
