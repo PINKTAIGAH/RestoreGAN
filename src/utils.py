@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 import config
 from torchvision.utils import save_image, make_grid
@@ -31,8 +30,15 @@ def save_examples(gen, val_loader, epoch, folder, filter):
     x, y = x.to(config.DEVICE), y.to(config.DEVICE)
     gen.eval()
     with torch.no_grad():
-        # Generate flow map with generator and use it to unshift jittered image
-        unshift_map_fake  = gen(x)
+        # Generate coefficients to unshift horizontal axis
+        unshift_coefficients = gen(x)
+        # Concatinate unshift coefficients with zeros in y dimention
+        unshift_coefficients = torch.cat([
+            unshift_coefficients, torch.zeros_like(unshift_coefficients) 
+        ], -1)
+        identity_flow_map = torch.clone(filter.identityFlowMap)
+        # Apply gennerated coefficients to identity flow map to generate unshift map
+        unshift_map_fake = identity_flow_map + unshift_coefficients
         y_fake = filter.shift(x, unshift_map_fake, isBatch=True)
         # Remove normalisation
         y_fake = y_fake * 0.5 + 0.5  
@@ -71,8 +77,11 @@ def save_examples_concatinated(gen, val_loader, epoch, folder, filter):
     x, y = x.to(config.DEVICE), y.to(config.DEVICE)
     gen.eval()
     with torch.no_grad():
-        # Generate flow map with generator and use it to unshift jittered image
-        unshift_map_fake  = gen(x)
+        # Generate coefficients to unshift horizontal axis
+        unshift_coefficients = gen(x)
+        identity_flow_map = torch.clone(filter.identityFlowMap)
+        # Apply gennerated coefficients to identity flow map to generate unshift map
+        unshift_map_fake = identity_flow_map[:, :, :, 0] + unshift_coefficients
         y_fake = filter.shift(x, unshift_map_fake, isBatch=True)
         # Remove normalisation
         x = x * 0.5 + 0.5

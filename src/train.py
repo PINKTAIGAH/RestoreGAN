@@ -90,8 +90,16 @@ def _trainFunction(
         # WGAN-GP paper
         for _ in range(config.DISCRIMINATOR_ITERATIONS):
             with torch.cuda.amp.autocast():
-                # Generate unshift flow map and compute unshifted image 
-                unshift_map_fake = gen(img_jittered)
+                # Generate coefficients to unshift horizontal axis
+                unshift_coefficients = gen(img_jittered)
+                # Concatinate unshift coefficients with zeros in y dimention
+                unshift_coefficients = torch.cat([
+                    unshift_coefficients, torch.zeros_like(unshift_coefficients) 
+                ], -1)
+                identity_flow_map = torch.clone(filter.identityFlowMap).requires_grad_()
+                # Apply gennerated coefficients to identity flow map to generate unshift map
+                unshift_map_fake = identity_flow_map + unshift_coefficients
+                # Apply unshift flow map to jittered image
                 img_fake = filter.shift(img_jittered, unshift_map_fake, isBatch=True,)
                 img_fake.requires_grad_()
 
@@ -156,8 +164,8 @@ def _trainFunction(
         with torch.no_grad():
             running_loss_gen += loss_gen.mean().item()
     # Call learning rate schedulars for both models
-    schedular_disc.step()
-    schedular_gen.step()
+    # schedular_disc.step()
+    # schedular_gen.step()
 
     # Create tuple with output values
     with torch.no_grad():

@@ -247,7 +247,7 @@ class FullyConnected(nn.Module):
             nn.Flatten(start_dim=1),
             
             nn.Linear(in_features=inChannel*inFeatures,
-                      out_features=2*outFeatures),
+                      out_features=outFeatures),
             nn.ReLU(),
         )
 
@@ -317,7 +317,7 @@ class Generator(nn.Module):
     Architecture of this network is based on the following paper 
     (https://doi.org/10.3390/s21144693)
     """
-    def __init__(self, imageSize, inChannel=1, outChannel=2,):
+    def __init__(self, imageSize, inChannel=1, outChannel=1,):
         super().__init__()
 
         self.fullyConnectedFeatures = int(imageSize/4 - 10)
@@ -334,11 +334,11 @@ class Generator(nn.Module):
         self.down4 = ResBlock(inChannel=128)
         ### out channel ==> 128 + 128 from skip connection
         self.down5 = SixthBlock(inChannel=128, outChannel=outChannel,) 
-        ### out channels = 2
+        ### out channels = 1
         self.down6 = FullyConnected(inChannel=outChannel,
                                     inFeatures=self.fullyConnectedFeatures**2,
                                     outFeatures=self.imageSize**2,)
-        ### out shape = B * N * N * 2 (Shape of flow map for unshifting) 
+        ### out shape = B * N * N * 1 (Shape of coefficients to unshift x-axis of flowmap) 
     
     def forward(self, x):
         """
@@ -363,8 +363,9 @@ class Generator(nn.Module):
         d4 = self.down4(d3)
         # print(f"d4 shape ==> {d4.shape}")
         d5 = self.down5(d4)
-        # print(f"d5 shape ==> {d5.shape}")
+        # print(f"d5 shape ==> {dshape}")
         d6 = self.down6(d5)
+        # print(f"d6 shape ==> {d6.shape}")
 
         output = torch.reshape(
             d6, (d6.shape[0], self.imageSize, self.imageSize, self.outChannel)
@@ -388,9 +389,9 @@ def initialiseWeights(model):
 def test():
     N = 128 
     x = torch.randn((16, 1, N, N))
-    ideal = torch.rand((16, N, N, 2))
+    ideal = torch.rand((16, N, N, 1))
     model = Generator(imageSize=N, inChannel=1,
-                      outChannel=2)
+                      outChannel=1)
     initialiseWeights(model)
     predicition = model(x)
     print(predicition.shape)
