@@ -92,6 +92,7 @@ def _trainFunction(
             with torch.cuda.amp.autocast():
                 # Generate coefficients to unshift horizontal axis
                 unshift_map_fake = gen(img_jittered).to(config.DEVICE)
+                unshift_map_fake[:, :, :, 1] = unshift_map_fake[:, :, :, 1] *0 
                 # Apply unshift flow map to jittered image
                 img_fake = filter.shift(img_jittered, unshift_map_fake, isBatch=True,)
 
@@ -163,8 +164,8 @@ def _trainFunction(
         with torch.no_grad():
             running_loss_gen += loss_gen.mean().item()
     # Call learning rate schedulars for both models
-    # schedular_disc.step()
-    # schedular_gen.step()
+    schedular_disc.step()
+    schedular_gen.step()
 
     # Create tuple with output values
     with torch.no_grad():

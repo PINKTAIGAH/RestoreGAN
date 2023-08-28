@@ -342,7 +342,7 @@ class Generator(nn.Module):
         ### out channels = 1
         self.down6 = FullyConnected(inChannel=outChannel,
                                     inFeatures=self.fullyConnectedFeatures**2,
-                                    outFeatures=self.imageSize**2,)
+                                    outFeatures=2*self.imageSize**2,)
         ### out shape = B * N * N * 1 (Shape of coefficients to unshift x-axis of flowmap) 
     
     def forward(self, x):
