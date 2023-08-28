@@ -91,15 +91,7 @@ def _trainFunction(
         for _ in range(config.DISCRIMINATOR_ITERATIONS):
             with torch.cuda.amp.autocast():
                 # Generate coefficients to unshift horizontal axis
-                unshift_coefficients = gen(img_jittered).to(config.DEVICE)
-                print(unshift_coefficients)
-                # Concatinate unshift coefficients with zeros in y dimention
-                unshift_coefficients = torch.cat([
-                    unshift_coefficients, torch.zeros_like(unshift_coefficients) 
-                ], -1).to(config.DEVICE)
-                identity_flow_map = torch.clone(filter.identityFlowMap).to(config.DEVICE)
-                # Apply gennerated coefficients to identity flow map to generate unshift map
-                unshift_map_fake = identity_flow_map - unshift_coefficients
+                unshift_map_fake = gen(img_jittered).to(config.DEVICE)
                 # Apply unshift flow map to jittered image
                 img_fake = filter.shift(img_jittered, unshift_map_fake, isBatch=True,)
 
@@ -115,7 +107,14 @@ def _trainFunction(
                         config.LAMBDA_GP*gp
                 )
                 # Compute overall loss function of discriminator
-                loss_disc = loss_adverserial_disc 
+                loss_content = content_loss(img_truth, img_fake)
+                loss_jitter = jitter_loss(unshift_map_truth, unshift_map_fake)
+
+                # Compute overall loss function of discriminator
+                loss_disc = (
+                    loss_adverserial_disc + loss_content*config.LAMBDA_CONTENT + 
+                    loss_jitter*config.LAMBDA_JITTER
+            )
                 # Add current loss to the running loss
                 with torch.no_grad():
                     running_loss_disc += loss_disc.mean().item()
