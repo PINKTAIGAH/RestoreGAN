@@ -291,7 +291,7 @@ class ImageGenerator(Dataset):
         assert len(input.shape) == 4 and len(flowMap.shape) == 4,\
                 "Input image and flowMap must have shape 4"
         
-        output =  F.grid_sample(input, flowMap, mode="bicubic", padding_mode="zeros",
+        output =  F.grid_sample(input, flowMap, mode="bicubic", padding_mode="border",
                          align_corners=False)
 
         if not isBatch:
