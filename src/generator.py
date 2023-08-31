@@ -90,7 +90,7 @@ class ThirdBlock(nn.Module):
 
         self.block = nn.Sequential(
             nn.Conv2d(in_channels=inChannel, out_channels=outChannel, kernel_size=3,
-                      stride=2, padding=0),
+                      stride=2, padding=1),
             nn.BatchNorm2d(outChannel),
             nn.ReLU(),
         )
@@ -325,7 +325,8 @@ class Generator(nn.Module):
     def __init__(self, imageSize, inChannel=1, outChannel=1,):
         super().__init__()
 
-        self.fullyConnectedFeatures = int(imageSize/4 - 10)
+        self.fullyConnectedFeatures = int(imageSize/4 - 11)
+        self.fullyConnectedFeatures = 23
         self.imageSize = imageSize
         self.outChannel = outChannel
         
@@ -368,7 +369,7 @@ class Generator(nn.Module):
         d4 = self.down4(d3)
         # print(f"d4 shape ==> {d4.shape}")
         d5 = self.down5(d4)
-        # print(f"d5 shape ==> {dshape}")
+        # print(f"d5 shape ==> {d5.shape}")
         d6 = self.down6(d5)
         # print(f"d6 shape ==> {d6.shape}")
 
@@ -396,7 +397,7 @@ def test():
     x = torch.randn((16, 1, N, N))
     ideal = torch.rand((16, N, N, 1))
     model = Generator(imageSize=N, inChannel=1,
-                      outChannel=1)
+                      outChannel=2)
     initialiseWeights(model)
     predicition = model(x)
     print(predicition.shape)
