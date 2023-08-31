@@ -108,12 +108,13 @@ def _trainFunction(
                 )
                 # Compute overall loss function of discriminator
                 loss_content = content_loss(img_truth, img_fake)
+                #loss_jitter = (unshift_map_truth - unshift_map_fake).pow(2).sum()/config.BATCH_SIZE
                 loss_jitter = jitter_loss(unshift_map_truth, unshift_map_fake)
 #                print(f"La:{loss_adverserial_disc:.2f} ## Lc:{loss_content*config.LAMBDA_CONTENT:.2f} ## Lj:{loss_jitter*config.LAMBDA_JITTER:.2f}")
 
                 # Compute overall loss function of discriminator
                 loss_disc = (
-                    loss_adverserial_disc + loss_jitter*config.LAMBDA_JITTER + loss_content*config.LAMDA_JITTER
+                    loss_adverserial_disc + 0*loss_jitter*config.LAMBDA_JITTER + 0*loss_content*config.LAMBDA_JITTER
                 )
                 # Add current loss to the running loss
                 with torch.no_grad():
@@ -136,12 +137,13 @@ def _trainFunction(
             loss_adverserial_gen = -torch.mean(output)
 
             loss_content = content_loss(img_truth, img_fake)
+            #loss_jitter = (unshift_map_truth - unshift_map_fake).pow(2).sum()/config.BATCH_SIZE
             loss_jitter = jitter_loss(unshift_map_truth, unshift_map_fake)
  #           print(f"La:{loss_adverserial_disc:.2f} ## Lc:{loss_content} ## Lj:{loss_jitter}")
 
             # Compute overall loss function of discriminator
             loss_gen = (
-                loss_adverserial_gen + loss_jitter*config.LAMBDA_JITTER
+                loss_adverserial_gen + loss_jitter*config.LAMBDA_JITTER + loss_content*config.LAMBDA_CONTENT
             )
 
         # Zero gradients of discriminator to avoid old gradients affecting backwards
@@ -163,8 +165,8 @@ def _trainFunction(
         with torch.no_grad():
             running_loss_gen += loss_gen.mean().item()
     # Call learning rate schedulars for both models
-#    schedular_disc.step()
-#    schedular_gen.step()
+    #schedular_disc.step()
+    #schedular_gen.step()
 
     # Create tuple with output values
     with torch.no_grad():
