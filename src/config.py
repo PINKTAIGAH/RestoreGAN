@@ -29,7 +29,7 @@ CHANNELS_IMG = 1                            # Colour channels of input image ten
 CHANNELS_OUT = 2
 CORRELATION_LENGTH = 10
 NUM_EPOCHS = 500
-LAMBDA_CONTENT = 0
+LAMBDA_CONTENT = 100
 LAMBDA_JITTER =  100
 LAMBDA_GP = 10
 LOAD_MODEL = False
@@ -75,24 +75,3 @@ transformsFile = transform.Compose([
 """
 Hyperparameter overwriting for automatic bash scripts 
 """
-LAMBDA_CONTENT = 50
-LAMBDA_JITTER = 50
-EVALUATION_IMAGE_FILE= '../evaluation/content_5050'
-LAMBDA_CONTENT = 50
-LAMBDA_JITTER = 50
-EVALUATION_IMAGE_FILE= '../evaluation/content_5050'
-LAMBDA_JITTER = 100
-EVALUATION_IMAGE_FILE= '../evaluation/content_50100'
-LAMBDA_CONTENT = 50
-LAMBDA_JITTER = 50
-EVALUATION_IMAGE_FILE= '../evaluation/content_5050'
-LAMBDA_JITTER = 100
-EVALUATION_IMAGE_FILE= '../evaluation/content_50100'
-LAMBDA_CONTENT = 50
-LAMBDA_JITTER = 50
-EVALUATION_IMAGE_FILE= '../evaluation/content_5050'
-LAMBDA_JITTER = 100
-EVALUATION_IMAGE_FILE= '../evaluation/content_50100'
-LAMBDA_CONTENT = 50
-LAMBDA_JITTER = 50
-EVALUATION_IMAGE_FILE= '../evaluation/content_5050'

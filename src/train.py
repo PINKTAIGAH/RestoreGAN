@@ -106,16 +106,10 @@ def _trainFunction(
                     -(torch.mean(disc_truth) - torch.mean(disc_fake)) + 
                         config.LAMBDA_GP*gp
                 )
-                # Compute overall loss function of discriminator
-                loss_content = content_loss(img_truth, img_fake)
-                #loss_jitter = (unshift_map_truth - unshift_map_fake).pow(2).sum()/config.BATCH_SIZE
-                loss_jitter = jitter_loss(unshift_map_truth, unshift_map_fake)
-#                print(f"La:{loss_adverserial_disc:.2f} ## Lc:{loss_content*config.LAMBDA_CONTENT:.2f} ## Lj:{loss_jitter*config.LAMBDA_JITTER:.2f}")
 
                 # Compute overall loss function of discriminator
-                loss_disc = (
-                    loss_adverserial_disc + 0*loss_jitter*config.LAMBDA_JITTER + 0*loss_content*config.LAMBDA_JITTER
-                )
+                loss_disc = loss_adverserial_disc 
+
                 # Add current loss to the running loss
                 with torch.no_grad():
                     running_loss_disc += loss_disc.mean().item()
@@ -137,9 +131,7 @@ def _trainFunction(
             loss_adverserial_gen = -torch.mean(output)
 
             loss_content = content_loss(img_truth, img_fake)
-            #loss_jitter = (unshift_map_truth - unshift_map_fake).pow(2).sum()/config.BATCH_SIZE
             loss_jitter = jitter_loss(unshift_map_truth, unshift_map_fake)
- #           print(f"La:{loss_adverserial_disc:.2f} ## Lc:{loss_content} ## Lj:{loss_jitter}")
 
             # Compute overall loss function of discriminator
             loss_gen = (
