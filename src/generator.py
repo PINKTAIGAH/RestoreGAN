@@ -215,7 +215,7 @@ class SixthBlock(nn.Module):
         """
         return self.block(x)
 
-class FullyConnected(nn.Module):
+class _FullyConnected(nn.Module):
     """
     An instance of the torch.nn.Module class containing the fully connected blocks
     of the RestoreGAN's generator neural network. Output of fully connected layer
@@ -240,20 +240,14 @@ class FullyConnected(nn.Module):
         Number of output features from fully conneted layer
     """
 
-    def __init__(self,inChannel, inFeatures, outFeatures=256):
+    def __init__(self, inChannel, inFeatures, outFeatures):
         super().__init__()
 
         self.fullyConnected = nn.Sequential(
             nn.Flatten(start_dim=1),
             nn.Linear(in_features=inChannel*inFeatures,
-                      out_features=inChannel*inFeatures*4),
-            nn.LeakyReLU(0.2),
-            nn.Linear(in_features=inChannel*inFeatures*4,
-                      out_features=inChannel*inFeatures*4*4),
-            nn.LeakyReLU(0.2),
-            nn.Linear(in_features=inChannel*inFeatures*4*4,
                       out_features=outFeatures),
-            nn.LeakyReLU(0.2),
+            nn.ReLU(inplace=True),
         )
 
     def forward(self, x):
@@ -272,6 +266,60 @@ class FullyConnected(nn.Module):
         """
         return self.fullyConnected(x)
 
+class _ConvBlock(nn.Module):
+    def __init__(self, inChannels, outChannels, down=True, useAct=True, **kwargs):
+        super().__init__()
+
+        # Define generic convolutional and transpose convolutional block
+        self.conv = nn.Sequential(
+            nn.Conv2d(
+                inChannels,
+                outChannels,
+                padding_mode="reflect",
+                **kwargs,
+            )
+            if down else nn.ConvTranspose2d(
+                inChannels,
+                outChannels,
+                **kwargs,
+            ),
+            nn.BatchNorm2d(outChannels),
+            # Only pass through activation function if useAct is True
+            nn.ReLU(inplace=True) if useAct else nn.Identity(),
+        )
+
+    def forward(self, x):
+        return self.conv(x)
+
+class _ResidualBlock(nn.Module):
+
+    def __init__(self, channels):
+        super().__init__()
+        
+        # Define convolutional block of the residual blocks
+        self.block = nn.Sequential(
+            _ConvBlock(
+                channels,
+                channels,
+                kernel_size=3,
+                padding=1,
+                stride=1,
+            ),
+            _ConvBlock(
+                channels,
+                channels,
+                useAct=False,
+                kernel_size=3,
+                padding=1,
+                stride=1,
+            ),
+        )
+
+    def forward(self, x):
+        # Return residual component of block
+        return x + self.block(x)
+
+
 class Generator(nn.Module):
     """
     A torch.nn.Module instance containing the generator of the RestoreGAN neural
@@ -285,25 +333,17 @@ class Generator(nn.Module):
         of equation 1 (see notes) for each convolutional block the tensor pass 
         passed through
 
-    down1: torch.nn.Sequential instance
-        Object which returns the output of the first two convolutional blocks of 
+    down1: torch.nn.ModuleList instance
+        Object which returns the output of the first three convolutional blocks of 
         RestoreGAN's generator
 
-    down2: torch.nn.Sequential instance
-        Object which returns the output of the third convolutional blocks of 
+    resBlock: torch.nn.Sequential instance
+        Object which returns the output of the two residual blocks of 
         RestoreGAN's generator
 
-    down3 & down4: torch.nn.Sequential instance
-        Object which returns the output of the Resnet convolutional blocks of 
-        RestoreGAN's generator
-
-    down5: torch.nn.Sequential instance
-        Object which returns the output of the sixth convolutional block of 
-        RestoreGAN's generator & Tanh activation function
-
-    down6: torch.nn.Sequential instance
-        Object which returns the output of the fully connected layer of the 
-        RestoreGAN generator
+    down3: torch.nn.ModuleList instance
+        Object which returns the output of final convolutional block + fully connected
+        layer of RestoreGAN's generator
 
     Parameters
     ----------
@@ -317,35 +357,46 @@ class Generator(nn.Module):
         Number of output channels of sixth convolutional block. Corresponds to 
         number of elements in output flow map vectors
 
+    numFeatures: int
+        Coefficient used to compute the input and output channels of the hidden 
+        layers of the generator
+
+    numResiduals: int
+        Number of residual blocks used in the generator
+
+    fullyConnectedFeatures: int
+        Width of input for fully connected layer
+
     Notes
     -----
     Architecture of this network is based on the following paper 
     (https://doi.org/10.3390/s21144693)
     """
-    def __init__(self, imageSize, inChannel=1, outChannel=1,):
+    def __init__(self, imageSize, inChannels=1, outChannels=1, numFeatures=64,
+                 numResiduals=2, fullyConnectedFeatures=60):
         super().__init__()
 
-        self.fullyConnectedFeatures = int(imageSize/4 - 11)
-        self.fullyConnectedFeatures = 23
+        self.fullyConnectedFeatures = fullyConnectedFeatures
         self.imageSize = imageSize
-        self.outChannel = outChannel
+        self.outChannels = outChannels
         
-        ### Input channels ==> 1
-        self.down1 = LargeBlock(inChannel=inChannel)
-        ### out channels ==> 64  
-        self.down2 = ThirdBlock(inChannel=64) 
-        ### out channels ==> 128
-        self.down3 = ResBlock(inChannel=128)
-        ### out channel ==> 128 + 128 from skip connection
-        self.down4 = ResBlock(inChannel=128)
-        ### out channel ==> 128 + 128 from skip connection
-        self.down5 = SixthBlock(inChannel=128, outChannel=outChannel,) 
-        ### out channels = 1
-        self.down6 = FullyConnected(inChannel=outChannel,
-                                    inFeatures=self.fullyConnectedFeatures**2,
-                                    outFeatures=2*self.imageSize**2,)
-        ### out shape = B * N * N * 1 (Shape of coefficients to unshift x-axis of flowmap) 
-    
+        self.down1 = nn.ModuleList([
+            _ConvBlock(inChannels, numFeatures, kernel_size=11, stride=1, padding=3),
+            nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+            _ConvBlock(numFeatures, numFeatures, kernel_size=7, stride=1, padding=3),
+            _ConvBlock(numFeatures, numFeatures*2, kernel_size=3, stride=1, padding=1),
+        ])
+
+        self.resBlock= nn.Sequential(
+            *[_ResidualBlock(numFeatures*2) for _ in range(numResiduals)] 
+        )
+
+        self.down2 = nn.ModuleList([
+            _ConvBlock(numFeatures*2, outChannels, kernel_size=5, stride=1, padding=1),
+            nn.Tanh(),
+            _FullyConnected(outChannels, self.fullyConnectedFeatures**2, 2*self.imageSize**2)
+        ])
+
     def forward(self, x):
         """
         Returns output of RestoreGAN's generator model when called
@@ -360,21 +411,16 @@ class Generator(nn.Module):
         output: torch.FloatTensor
             Tensor containing discriminator score of the inputted image
         """
-        d1 = self.down1(x)
-        # print(f"d1 shape ==> {d1.shape}")
-        d2 = self.down2(d1)
-        # print(f"d2 shape ==> {d2.shape}")
-        d3 = self.down3(d2)
-        # print(f"d3 shape ==> {d3.shape}")
-        d4 = self.down4(d3)
-        # print(f"d4 shape ==> {d4.shape}")
-        d5 = self.down5(d4)
-        # print(f"d5 shape ==> {d5.shape}")
-        d6 = self.down6(d5)
-        # print(f"d6 shape ==> {d6.shape}")
+        for layer in self.down1:
+            x = layer(x)
 
+        x = self.resBlock(x)
+
+        for layer in self.down2:
+            x = layer(x)
+        
         output = torch.reshape(
-            d6, (d6.shape[0], self.imageSize, self.imageSize, self.outChannel)
+            x, (x.shape[0], self.imageSize, self.imageSize, self.outChannels)
         )
 
         return output
@@ -394,10 +440,10 @@ def initialiseWeights(model):
 
 def test():
     N = 128 
-    x = torch.randn((16, 1, N, N))
-    ideal = torch.rand((16, N, N, 1))
-    model = Generator(imageSize=N, inChannel=1,
-                      outChannel=2)
+    x = torch.randn((1, 1, N, N))
+    ideal = torch.rand((1, N, N, 1))
+    model = Generator(imageSize=N, inChannels=1,
+                      outChannels=2)
     initialiseWeights(model)
     predicition = model(x)
     print(predicition.shape)
