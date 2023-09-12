@@ -172,8 +172,8 @@ def _trainFunction(
 def main():
     # Define discriminator and generator objects + initialise their weights
     disc = Discriminator(config.CHANNELS_IMG, featuresD=16).to(config.DEVICE)
-    gen = Generator(inChannel=config.CHANNELS_IMG, 
-                    outChannel=config.CHANNELS_OUT,
+    gen = Generator(inChannels=config.CHANNELS_IMG, 
+                    outChannels=config.CHANNELS_OUT,
                     imageSize=config.IMAGE_SIZE).to(config.DEVICE)
     initialiseWeights(disc)
     initialiseWeights(gen)
