@@ -71,9 +71,12 @@ CHECKPOINT_DISC_LOAD = "../models/disc.pth.tar"  # Discriminator weights
 CHECKPOINT_GEN_LOAD = "../models/gen.pth.tar"    # Generator weights
 ~~~
 
-## Using trained network in production
+## Using trained network in productio
 
 (**Work in progress**)
 You can initialise a new instance of the generator in a new script and load pretrained weights to it. The generator will now act as an image dejitter filter.
 
+## Acknowledgments
+
+Architecture of model is inspired by [RestoreGAN](https://www.mdpi.com/1424-8220/21/14/4693). Structure of the training and discriminator scripts are based on the GAN implementations of [Aladdin Persson](https://github.com/aladdinpersson/Machine-Learning-Collection) 
 
