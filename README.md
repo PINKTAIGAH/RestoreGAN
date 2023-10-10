@@ -1,7 +1,7 @@
 # RestoreGAN
 A PyTorch implementation of RestoreGAN modified to be used to dejitter 2D images taken at the P06 experiment at PETRA III
 
-Networks are tested on images of 128x128. Similar performance on images of a different size cannot be garanteed 
+Networks are tested on images of 128x128. Similar performance on images of a different size cannot be garanteed.
 
 ## Setup
 
