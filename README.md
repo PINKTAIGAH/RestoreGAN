@@ -1,6 +1,8 @@
 # RestoreGAN
 A pytorch implementation of RestoreGAN modified to be used to dejitter 2D images taken at the P06 experiment at PETRA III
 
+Networks are tested on images of 128x128. Similar performance on images of a different size cannot be garanteed 
+
 ## Setup
 
 ### Prerequisits
@@ -68,4 +70,10 @@ LOAD_MODEL = True
 CHECKPOINT_DISC_LOAD = "../models/disc.pth.tar"  # Discriminator weights
 CHECKPOINT_GEN_LOAD = "../models/gen.pth.tar"    # Generator weights
 ~~~
+
+## Using trained network in production
+
+(**Work in progress**)
+You can initialise a new instance of the generator in a new script and load pretrained weights to it. The generator will now act as an image dejitter filter.
+
 
