@@ -15,6 +15,49 @@ Install the required dependancies
 pip3 install torch torchvision torchaudio tqdm numpy scipy 
 ~~~
 
+Clone this repository
+
+~~~bash
+git clone https://github.com/PINKTAIGAH/RestoreGAN.git
+cd RestoreGAN
+~~~
+
+Download desired dataset form Kaggle here (**Remember to add link**)
+
+Define the location of the training and validation dataset by modifying the following two variables is scr/config.py
+
+~~~python
+TRAIN_DIR = "path/to/train/data/dir"
+VAL_DIR = "path/to/validation/data/dir"
+~~~
+
+Other hyperparameters can also be modified in scr/config.py. Hyperparameters can also be modified from the command line by overwriting a variable's value. Below is an example of modifying TRAIN_DIR
+
+~~~bash
+echo "TRAIN_DIR = /new/path/to/dir" >> scr/config.py
+~~~
+
+## Training Model
+
+Once the desired hyperparameters have been set, the generator and discriminator can be trained by running src/train.py 
+
+~~~bash
+python3 src/train.py
+~~~
+
+Using bash scripts located in scr/bash (**Remember to actually include**), we can preform crude hyperparameter optimisation. For example, to train model using varying lambda values for loss function
+
+~~~bash
+bash src/test_lambda_content.sh
+~~~
+
+To save weights of model while training, modify the value of the following bool in src/config.py. 
+
+~~~python
+SAVE_MODEL = True
+# Modify the name of the file to which weights are saved to
+~~~
+
 #### Note that code has been written such that it expects a single input images
 from the dataset. This would mean that the left image is the Jittered truth image
 while the right image is the unjittered ground truth
