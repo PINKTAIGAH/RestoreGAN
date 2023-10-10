@@ -78,5 +78,5 @@ You can initialise a new instance of the generator in a new script and load pret
 
 ## Acknowledgments
 
-Architecture of model is inspired by [RestoreGAN](https://www.mdpi.com/1424-8220/21/14/4693). Structure of the training and discriminator scripts are based on the GAN implementations of [Aladdin Persson](https://github.com/aladdinpersson/Machine-Learning-Collection) 
+Architecture of model is inspired by [RestoreGAN](https://www.mdpi.com/1424-8220/21/14/4693). Structure of the training and discriminator scripts are based on the GAN implementations of [Aladdin Persson](https://github.com/aladdinpersson/Machine-Learning-Collection).
 
