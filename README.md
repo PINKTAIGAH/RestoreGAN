@@ -5,7 +5,7 @@ Networks are tested on images of 128x128. Similar performance on images of a dif
 
 ## Setup
 
-### Prerequisits
+### Pre-requisites
 
 This implementation was tested using a NVIDEA GPU + CUDA CuDNN. While this implementation should work on a CPU with no modifications to the sourcecode, this is as of yet untested.
 
