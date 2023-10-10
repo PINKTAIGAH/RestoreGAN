@@ -51,13 +51,21 @@ Using bash scripts located in scr/bash (**Remember to actually include**), we ca
 bash src/test_lambda_content.sh
 ~~~
 
-To save weights of model while training, modify the value of the following bool in src/config.py. 
+To save weights of model while training, modify the value of the following bool in src/config.py. The weights are saved in models/
 
 ~~~python
 SAVE_MODEL = True
 # Modify the name of the file to which weights are saved to
+CHECKPOINT_DISC_SAVE = "../models/disc.pth.tar"  # Discriminator weights
+CHECKPOINT_GEN_SAVE = "../models/gen.pth.tar"    # Generator weights
 ~~~
 
-#### Note that code has been written such that it expects a single input images
-from the dataset. This would mean that the left image is the Jittered truth image
-while the right image is the unjittered ground truth
+To train using a pretrained model, we can load in pretrained weights by modifying the following variables
+
+~~~python
+LOAD_MODEL = True
+# Modify the name of the file to which weights are saved to
+CHECKPOINT_DISC_LOAD = "../models/disc.pth.tar"  # Discriminator weights
+CHECKPOINT_GEN_LOAD = "../models/gen.pth.tar"    # Generator weights
+~~~
+
