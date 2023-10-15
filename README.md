@@ -24,7 +24,7 @@ git clone https://github.com/PINKTAIGAH/RestoreGAN.git
 cd RestoreGAN
 ~~~
 
-Download desired dataset form Kaggle here (**Remember to add link**)
+Download desired dataset form Kaggle [here](https://www.kaggle.com/datasets/giorgiospezza/p06-dataset).
 
 Define the location of the training and validation dataset by modifying the following two variables is scr/config.py
 
