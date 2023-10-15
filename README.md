@@ -14,7 +14,7 @@ This implementation was tested using a NVIDEA GPU + CUDA CuDNN. While this imple
 Install the required dependancies
 
 ~~~ bash
-pip3 install torch torchvision torchaudio tqdm numpy scipy 
+pip3 install torch torchvision torchaudio tqdm numpy scipy scikit-learn
 ~~~
 
 Clone this repository
