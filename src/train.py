@@ -202,6 +202,8 @@ def main():
         )
 
     # Initialise training dataset and dataloader
+    ### Uncomment for dataset to be images from a folder
+    # train_dataset = FileDataset(config.TRAIN_DIR, config.IMAGE_SIZE,) 
     train_dataset = JitteredDataset(1024)
     train_loader = DataLoader(
         train_dataset,
@@ -214,6 +216,8 @@ def main():
     d_scaler = torch.cuda.amp.GradScaler()
 
     # Initialise validation dataset and dataloader
+    ### Uncomment for dataset to be images from a folder
+    # val_dataset = FileDataset(config.VAL_DIR, config.IMAGE_SIZE,) 
     val_dataset = JitteredDataset(256) 
     val_loader = DataLoader(val_dataset, batch_size=1, shuffle=True)
 
